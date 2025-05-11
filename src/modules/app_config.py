@@ -7,7 +7,7 @@ import pathlib
 import platform
 
 name = "PyZ Launcher"
-version = "0.1.0_dev1" # Enter 'dev' in the name to test
+version = "0.1.0" # Enter 'dev' in the name to test
 dev_mode = True if "dev" in version else False
 
 SETTINGS_KEY = "pyz.minecraftlauncher.settings"

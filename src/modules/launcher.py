@@ -51,7 +51,7 @@ def launch_game(page: ft.Page, version_id: str, status_text_control: ft.Text, bu
         play_button.update()
         
         # Ejecutar el comando
-        process = subprocess.Popen(minecraft_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        process = subprocess.Popen(minecraft_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=subprocess.CREATE_NO_WINDOW)
         update_status_safe(page, status_text_control, f"Minecraft ({app_settings.get_setting(AppData.USERNAME)} - {version_id}) Started. PID: {process.pid}")
         play_button.text = "Running Minecraft..."
         play_button.update()
