@@ -363,6 +363,7 @@ class HomeView():
     
     def ui_launch_game(self, e):
         selected_version = self.installed_dropdown.value
+        installed_list_id = [v["id"] for v in get_versions()["installed"]]
 
         if not selected_version:
             self.status_text.value = "Please select a version."
@@ -370,13 +371,13 @@ class HomeView():
         
         if selected_version == "Latest release":
             selected_version = mll.utils.get_latest_version()["release"]
-            if selected_version not in get_versions()["installed"]:
+            if selected_version not in installed_list_id:
                 self.ui_install_game(None, selected_version)
                 return
             app_settings.save_settings(AppData.LAST_PLAYED, "")
         elif selected_version == "Latest snapshot":
             selected_version = mll.utils.get_latest_version()["snapshot"]
-            if selected_version not in get_versions()["installed"]:
+            if selected_version not in installed_list_id:
                 self.ui_install_game(None, selected_version)
                 return
             app_settings.save_settings(AppData.LAST_PLAYED, "latest_snapshot")
