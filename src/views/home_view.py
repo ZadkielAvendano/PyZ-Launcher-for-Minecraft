@@ -15,7 +15,7 @@ class HomeView():
         self.page = page
 
         self.installed_options: list[ft.DropdownOption] = []
-        self.releases_options: list[ft.DropdownOption] = []
+        self.versions_options: list[ft.DropdownOption] = []
 
         self.username_text = ft.Text(
             value=app_settings.get_setting(AppData.USERNAME),
@@ -41,13 +41,31 @@ class HomeView():
             border_color=ft.Colors.WHITE24,
             color=ft.Colors.WHITE,
             focused_bgcolor="#4A4A4A",
-            value=app_settings.get_setting(AppData.MC_DIRECTORY)
+            value=app_settings.return_mc_directory()
+        )
+
+        self.version_type_dropdown = ft.Dropdown(
+            value="vanilla",
+            label="Version type",
+            hint_text="Select a version type",
+            options=[
+                ft.DropdownOption("vanilla", "Vanilla"),
+                ft.DropdownOption("snapshot", "Snapshot"),
+                # Preparing to add support for Forge and Fabric
+                #ft.DropdownOption("fabric", "Fabric"),
+                #ft.DropdownOption("forge", "Forge")
+                ],
+            width=300,
+            bgcolor="#3C3C3C",
+            border_color=ft.Colors.WHITE24,
+            color=ft.Colors.WHITE,
+            on_change=self.refresh
         )
 
         self.version_dropdown = ft.Dropdown(
             label="Game version",
             hint_text="Select a version",
-            options=self.releases_options,
+            options=self.versions_options,
             width=300,
             bgcolor="#3C3C3C",
             border_color=ft.Colors.WHITE24,
@@ -116,6 +134,8 @@ class HomeView():
         )
 
         self.status_text = ft.Text("Status: Ready", size=12, color=ft.Colors.AMBER, max_lines=3, overflow=ft.TextOverflow.ELLIPSIS)
+
+        self.progress_text = ft.Text("", size=12, color=ft.Colors.AMBER, max_lines=3, overflow=ft.TextOverflow.ELLIPSIS)
         
         self.info_minecraft_dir = ft.Text(
             f"Minecraft directory: {app_settings.return_mc_directory()}",
@@ -124,7 +144,7 @@ class HomeView():
             italic=True
         )
 
-        self.progress_bar = ft.ProgressBar(value=0, width=400)
+        self.progress_bar = ft.ProgressBar(value=0, width=400, border_radius=5)
 
         self.progress_window = ft.AlertDialog(
             modal=True,
@@ -135,7 +155,13 @@ class HomeView():
                 expand=False,
                 controls=[
                     self.progress_bar,
-                    self.status_text
+                    ft.Row(
+                        controls=[
+                            self.status_text,
+                            ft.Container(expand=True),
+                            self.progress_text
+                        ]
+                    )
                 ]
             )
         )
@@ -148,6 +174,7 @@ class HomeView():
             content=ft.Column(
                 expand=False,
                 controls=[
+                    self.version_type_dropdown,
                     self.version_dropdown,
                     self.install_button
                 ]
@@ -244,31 +271,64 @@ class HomeView():
         self.refresh()
 
     
-    def refresh(self):
+    def refresh(self, e=None):
         versions = get_versions()
         last_played = app_settings.get_setting(AppData.LAST_PLAYED)
-        self.installed_options = [ft.DropdownOption(v) for v in versions["installed"]]
-        self.releases_options = [ft.DropdownOption(v) for v in versions["releases"]]
-        if not self.releases_options:
-            self.releases_options.append(ft.DropdownOption("1.21.5"))
+
+        # Sets the selected version type
+        match self.version_type_dropdown.value:
+            case "snapshot":
+                version_type = "snapshots"
+            case _:
+                version_type = "releases"
+
+        # Retrieve installed and available versions
+        self.installed_options = [ft.DropdownOption(v["id"], f"{v["id"]} {str(v["type"]).capitalize()}" if v["type"] != "release" else v["id"]) for v in versions["installed"]]
+        self.versions_options = [ft.DropdownOption(v) for v in versions[version_type]]
+
+        # Ensure at least one available version
+        if not self.versions_options:
+            self.versions_options.append(ft.DropdownOption("1.21.5"))
+
         try:
+            # Configure installed versions dropdown
             self.installed_dropdown.options = self.installed_options
-            self.installed_dropdown.options.insert(0, ft.DropdownOption("Lastest release"))
-            if last_played != "" and last_played in versions["installed"]:
+            self.installed_dropdown.options.insert(0, ft.DropdownOption("Latest release", leading_icon=ft.Icons.FIBER_NEW))
+            self.installed_dropdown.options.insert(1, ft.DropdownOption("Latest snapshot", leading_icon=ft.Icons.PHOTO_CAMERA))
+
+            if last_played and last_played in [installed["id"] for installed in versions["installed"]]:
                 self.installed_dropdown.value = last_played
+            elif last_played and last_played == "latest_snapshot":
+                self.installed_dropdown.value = "Latest snapshot"
             else:
-                self.installed_dropdown.value = "Lastest release"
-                if last_played != "":
+                self.installed_dropdown.value = "Latest release"
+                if last_played:
                     app_settings.save_settings(AppData.LAST_PLAYED, "")
-            self.version_dropdown.options = self.releases_options
-            self.version_dropdown.value = self.releases_options[0].key
+
+            # Configure available versions dropdown
+            self.version_dropdown.options = self.versions_options
+            self.version_dropdown.value = self.versions_options[0].key
+
         except Exception as e:
             print(f"Error: {e}")
-        self.play_button.text = "PLAY" if mll.utils.is_minecraft_installed(app_settings.return_mc_directory()) else "INSTALL"
+
+        # Set play button text based on Minecraft installation status
+        mc_installed = mll.utils.is_minecraft_installed(app_settings.return_mc_directory())
+        self.play_button.text = "PLAY" if mc_installed else "INSTALL"
+
+        # Load user information
         self.username_input.value = app_settings.get_setting(AppData.USERNAME)
         self.username_text.value = app_settings.get_setting(AppData.USERNAME)
+
+        # Display Minecraft directory path
         self.info_minecraft_dir.value = f"Minecraft directory: {app_settings.return_mc_directory()}"
-        self.maximum_ram_slider.value = int(re.search(r"\d+", app_settings.get_setting(AppData.JVM_ARGUMENTS)[0]).group())
+        self.minecraft_directory_input.value = app_settings.return_mc_directory()
+
+        # Configure maximum RAM slider from JVM arguments
+        jvm_args = app_settings.get_setting(AppData.JVM_ARGUMENTS)
+        self.maximum_ram_slider.value = int(re.search(r"\d+", jvm_args[0]).group())
+
+        # Refresh UI components
         self.page.update()
         print("Refresh!")
 
@@ -308,12 +368,18 @@ class HomeView():
             self.status_text.value = "Please select a version."
             return
         
-        if selected_version == "Lastest release":
+        if selected_version == "Latest release":
             selected_version = mll.utils.get_latest_version()["release"]
             if selected_version not in get_versions()["installed"]:
                 self.ui_install_game(None, selected_version)
                 return
             app_settings.save_settings(AppData.LAST_PLAYED, "")
+        elif selected_version == "Latest snapshot":
+            selected_version = mll.utils.get_latest_version()["snapshot"]
+            if selected_version not in get_versions()["installed"]:
+                self.ui_install_game(None, selected_version)
+                return
+            app_settings.save_settings(AppData.LAST_PLAYED, "latest_snapshot")
         else:
             # Save the last played version
             app_settings.save_settings(AppData.LAST_PLAYED, selected_version)
@@ -341,6 +407,7 @@ class HomeView():
             pass
         self.page.open(self.progress_window)
         buttons_to_disable = [self.play_button, self.install_button, self.version_dropdown, self.installed_dropdown, self.username_input]
-        thread = threading.Thread(target=install_version, args=(self.page, selected_version, buttons_to_disable, self.progress_window, self.progress_bar, self.status_text, self.refresh))
+        thread = threading.Thread(target=install_version, args=(self.page, selected_version, buttons_to_disable, self.progress_window, self.progress_bar,
+                                                                self.status_text, self.progress_text, self.refresh))
         thread.daemon = True
         thread.start()

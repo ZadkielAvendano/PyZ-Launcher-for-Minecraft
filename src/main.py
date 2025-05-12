@@ -35,8 +35,9 @@ def main(page: ft.Page):
     page.window.height = 700
     page.window.min_height = 500
     page.window.min_width = 600
-    page.theme = theme
     page.window.center()
+    page.theme = theme
+    page.theme_mode = ft.ThemeMode.DARK
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.bgcolor = ft.Colors.TRANSPARENT

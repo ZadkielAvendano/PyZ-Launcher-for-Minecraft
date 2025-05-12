@@ -1,6 +1,6 @@
 [project]
 name = "PyZ-Launcher"
-version = "0.1.0"
+version = "0.2.0"
 description = ""
 readme = "README.md"
 requires-python = ">=3.9"
@@ -29,6 +29,15 @@ copyright = "Copyright (C) 2025 by Zadkiel Avendano"
 
 [tool.flet.app]
 path = "src"
+
+[tool.flet.app.boot_screen]
+show = true
+message = "Initializing Launcher..."
+
+[tool.flet.compile]
+app = true # --compile-app
+packages = true # --compile-packages
+cleanup = true # --cleanup-on-compile
 
 [tool.uv]
 dev-dependencies = [
