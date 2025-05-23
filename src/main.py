@@ -1,5 +1,10 @@
+# This file is part of PYZ-LAUNCHER-FOR-MINECRAFT (https://github.com/ZadkielAvendano/PyZ-Launcher-for-Minecraft)
+# Copyright (c) 2025 Zadkiel Avendano and collaborators
+# License-Identifier: MIT License
+
 import flet as ft
 from modules.app_config import *
+from modules.refresh_handler import *
 
 theme_transition = ft.PageTransitionTheme.ZOOM
 
@@ -30,7 +35,7 @@ style=ft.ButtonStyle(
             )
 
 def main(page: ft.Page):
-    page.title = f"{name} - {version}"
+    page.title = f"{app_name} - {app_version}"
     page.window.width = 1000
     page.window.height = 700
     page.window.min_height = 500
@@ -59,34 +64,41 @@ def main(page: ft.Page):
 
     # Import views
     from views.home_view import HomeView
+    from views.launcher_profiles_view import LauncherProfilesView
 
     # Load views
-    home_view = HomeView(page)
+    launcher_profiles_view = LauncherProfilesView(page)
+    home_view = HomeView(page, launcher_profiles_view)
 
+    # Configure refresh states
+    refresh_list.append(home_view.refresh_ui)
+    refresh_list.append(launcher_profiles_view.refresh_ui)
 
     def route_change(e):
         page.views.clear()
         page.views.append(home_view.view)
-        """if page.route == "/PLACEHOLDER":
-            page.views.append(PLACEHOLDER.view)"""
+        if page.route == "/launcher-profiles":
+            page.views.append(launcher_profiles_view.view)
+            page.title = f"{app_name} - Launcher Profiles - {app_version}"
+        else:
+            page.title = f"{app_name} - {app_version}"
         page.update()
 
     def view_pop(e):
         page.go("/")
-        """if page.views:
-            if page.route == "/PLACEHOLDER":
-                page.update()
+        if page.views:
+            if page.route == "/launcher-profiles":
                 page.go("/")
             else:
                 page.go("/")
         else:
-            page.go("/")"""
+            page.go("/")
 
     page.on_route_change = route_change
     page.on_view_pop = view_pop
     page.go(page.route)
     page.clean()
-    page.update()
+    refresh()
 
 if __name__ == "__main__":
     ft.app(target=main, assets_dir="assets")

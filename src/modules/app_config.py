@@ -1,3 +1,7 @@
+# This file is part of PYZ-LAUNCHER-FOR-MINECRAFT (https://github.com/ZadkielAvendano/PyZ-Launcher-for-Minecraft)
+# Copyright (c) 2025 Zadkiel Avendano and collaborators
+# License-Identifier: MIT License
+
 import flet as ft
 from enum import Enum
 import random
@@ -6,9 +10,9 @@ import os
 import pathlib
 import platform
 
-name = "PyZ Launcher"
-version = "0.2.0" # Enter 'dev' in the name to test
-dev_mode = True if "dev" in version else False
+app_name = "PyZ Launcher"
+app_version = "0.3.0_dev1" # Enter 'dev' in the name to test
+dev_mode = True if "dev" in app_version else False
 
 SETTINGS_KEY = "pyz.minecraftlauncher.settings"
 
@@ -29,6 +33,9 @@ except Exception as e:
     print(f"Error: {e}")
 
 class AppData(Enum):
+    """
+    Defines an enumeration for various application settings for Minecraft.
+    """
     USERNAME = "username"
     UUID = "uuid"
     TOKEN = "token"
@@ -39,11 +46,17 @@ class AppData(Enum):
 
 
 class Settings():
+    """
+    Manages application settings, including loading, saving, and retrieving stored configurations.
+    """
     def __init__(self, page: ft.Page = None, settings: dict = None):
         self.page = page
         self.settings = settings
 
     def load_settings(self):
+        """
+        Loads saved settings from client storage or initializes them with default values if none exist.
+        """
         if self.page.client_storage.contains_key(SETTINGS_KEY):
             self.settings = self.page.client_storage.get(SETTINGS_KEY)
         else:
@@ -52,6 +65,9 @@ class Settings():
         print(f"Settings loaded: {self.settings}")
 
     def save_settings(self, key: AppData, save: str):
+        """
+        Saves a specific setting to client storage, handling errors gracefully.
+        """
         try:
             self.settings[key.value] = save
             self.page.client_storage.set(SETTINGS_KEY, self.settings)
@@ -61,6 +77,9 @@ class Settings():
             print(f"An error occurred while saving data. {e}")
 
     def get_setting(self, setting: AppData):
+        """
+        Retrieves the value of a specified setting, ensuring it exists by initializing it if necessary.
+        """
         try:
             return self.settings[setting.value]
         except Exception as e:
@@ -69,6 +88,9 @@ class Settings():
             return default_data[setting.value]
         
     def return_mc_directory(self) -> str:
+        """
+        Returns the correct Minecraft directory path based on system type or developer mode settings.
+        """
         minecraft_directory = self.get_setting(AppData.MC_DIRECTORY)
         try:
             if minecraft_directory == "" and not dev_mode: # Default Minecraft Directory
@@ -99,6 +121,9 @@ class Settings():
 app_settings = Settings()
 
 def init_settings(page: ft.Page):
+    """
+    Initializes application settings for the given UI page and ensures Minecraft directory availability.
+    """
     app_settings.page = page
     app_settings.load_settings()
     print("MINECRAFT DIRECTORY:", app_settings.return_mc_directory())
