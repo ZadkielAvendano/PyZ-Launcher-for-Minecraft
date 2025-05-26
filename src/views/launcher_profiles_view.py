@@ -123,7 +123,16 @@ class LauncherProfilesView():
             vertical_alignment=ft.MainAxisAlignment.START,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             appbar=ft.AppBar(
-                title=ft.Text("Launcher Profiles", size=30, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                title=ft.Text("Launcher Profiles", size=25, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                actions=[
+                    ft.IconButton(
+                        icon=ft.Icons.ADD,
+                        icon_size=25,
+                        icon_color=ft.Colors.WHITE,
+                        tooltip="New launcher profile",
+                        on_click=self.edit_launcher_profile
+                    )
+                ],
                 bgcolor="#3C3C3C"
             ),
             bgcolor=ft.Colors.TRANSPARENT,
@@ -243,9 +252,9 @@ class LauncherProfilesView():
         If an existing profile is provided, it searches for its key. If not, it creates a new custom profile.
         """
         if edit_profile:
-            with open(os.path.join(app_settings.return_mc_directory(), "launcher_profiles.json"), "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            key = next((key for key, value in data["profiles"].items() if value == edit_profile), None)
+            #with open(os.path.join(app_settings.return_mc_directory(), "launcher_profiles.json"), "r", encoding="utf-8") as f:
+            #        data = json.load(f)
+            pass
         else:
             profile: mll.types.VanillaLauncherProfile = {
                 "name": self.profile_name_input.value if self.profile_name_input.value else self.version_dropdown.value,
@@ -260,31 +269,8 @@ class LauncherProfilesView():
     
 
     def remove_launcher_profile(self, edit_profile: mll.types.VanillaLauncherProfile, launcher_option: LauncherProfileOption):
-        with open(os.path.join(app_settings.return_mc_directory(), "launcher_profiles.json"), "r", encoding="utf-8") as f:
-            data = json.load(f)
-        for profile, values in data["profiles"].items():
-            print(f"Profile ({profile}): {values}")
-
-        key = self.encontrar_clave_perfil(data, edit_profile)
-        print(key)
-
-
-    
-    def encontrar_clave_perfil(self, datos_json: dict, datos_perfil_buscado: dict):
-        perfiles_en_json: dict = datos_json.get("profiles", {})
-
-        for clave_perfil, info_perfil_json in perfiles_en_json.items():
-            coincide = True
-            # Verificar si todos los items de datos_perfil_buscado están en info_perfil_json
-            for clave_buscada, valor_buscado in datos_perfil_buscado.items():
-                if info_perfil_json.get(clave_buscada) != valor_buscado:
-                    coincide = False
-                    break  # Si un item no coincide, no es necesario seguir revisando este perfil
-            
-            if coincide:
-                return clave_perfil  # Se encontró el perfil
-
-        return None # No se encontró ningún perfil que coincida
+        # Working on the next update
+        pass
 
 
 

@@ -29,8 +29,8 @@ class LauncherProfileOption(ft.ListTile):
             icon=ft.Icons.MORE_VERT,
             bgcolor=ft.Colors.GREY_800,
             items=[
-                ft.PopupMenuItem(text="View", on_click=lambda e: on_edit(self.launcher_profile)),
-                ft.PopupMenuItem(text="Remove", on_click=lambda e: on_remove(self.launcher_profile, self)),
+                ft.PopupMenuItem(text="View", on_click=lambda e: on_edit(self.launcher_profile)), # Edit profile feature is planned for the next version.
+                #ft.PopupMenuItem(text="Remove", on_click=lambda e: on_remove(self.launcher_profile, self)), # Working on the next update
             ],
         )
         self.on_click=lambda e: on_edit(self.launcher_profile)

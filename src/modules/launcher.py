@@ -119,7 +119,7 @@ def install_version(page: ft.Page, version_id: str, buttons_to_disable: list, pr
 
 
 def get_versions() -> dict:
-    """Returns a dict of all Minecraft versions (release, snapshot, old_beta, old_alpha)"""
+    """Returns a dict of all Minecraft versions (installed, release, snapshot, old_beta, old_alpha)"""
 
     versions = mll.utils.get_version_list()
     installed = mll.utils.get_installed_versions(app_settings.return_mc_directory())

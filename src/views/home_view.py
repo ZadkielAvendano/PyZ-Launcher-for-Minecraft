@@ -58,7 +58,8 @@ class HomeView():
             width=200,
             bgcolor="#3C3C3C",
             border_color=ft.Colors.WHITE24,
-            color=ft.Colors.WHITE
+            color=ft.Colors.WHITE,
+            on_change=self.refresh_play_button
         )
 
         self.maximum_ram_slider = ft.Slider(
@@ -229,33 +230,32 @@ class HomeView():
         last_played = app_settings.get_setting(AppData.LAST_PLAYED)
 
         # Retrieve installed and available versions
-        self.installed_options = [ft.DropdownOption(v["id"], f"{v["id"]} {str(v["type"]).capitalize()}" if v["type"] != "release" else v["id"]) for v in versions["installed"]]
-
-        # Ensure at least one available version
-        if not self.versions_options:
-            self.versions_options.append(ft.DropdownOption("1.21.5"))
-
+        if mll.vanilla_launcher.do_vanilla_launcher_profiles_exists(app_settings.return_mc_directory()):
+            self.installed_options = []
+            for profile in mll.vanilla_launcher.load_vanilla_launcher_profiles(app_settings.return_mc_directory()):
+                version_type = profile["versionType"]
+                if version_type in {"latest-release", "latest-snapshot"}:
+                    self.installed_options.append(ft.DropdownOption(key=version_type, text=version_type.replace("-", " ").capitalize(), data=profile))
+                else:
+                    self.installed_options.append(ft.DropdownOption(key=profile["version"], text=profile["name"], data=profile))
         try:
             # Configure installed versions dropdown
             self.installed_dropdown.options = self.installed_options
-            self.installed_dropdown.options.insert(0, ft.DropdownOption("Latest release", leading_icon=ft.Icons.FIBER_NEW))
-            self.installed_dropdown.options.insert(1, ft.DropdownOption("Latest snapshot", leading_icon=ft.Icons.PHOTO_CAMERA))
 
             if last_played and last_played in [installed["id"] for installed in versions["installed"]]:
                 self.installed_dropdown.value = last_played
-            elif last_played and last_played == "latest_snapshot":
-                self.installed_dropdown.value = "Latest snapshot"
+            elif last_played and last_played == "latest-snapshot":
+                self.installed_dropdown.value = "latest-snapshot"
             else:
-                self.installed_dropdown.value = "Latest release"
+                self.installed_dropdown.value = "latest-release"
                 if last_played:
-                    app_settings.save_settings(AppData.LAST_PLAYED, "")
+                    app_settings.save_settings(AppData.LAST_PLAYED, "latest-release")
 
         except Exception as e:
             print(f"Error: {e}")
 
         # Set play button text based on Minecraft installation status
-        mc_installed = mll.utils.is_minecraft_installed(app_settings.return_mc_directory())
-        self.play_button.text = "PLAY" if mc_installed else "INSTALL"
+        self.refresh_play_button()
 
         # Load user information
         self.username_input.value = app_settings.get_setting(AppData.USERNAME)
@@ -268,6 +268,21 @@ class HomeView():
         # Configure maximum RAM slider from JVM arguments
         jvm_args = app_settings.get_setting(AppData.JVM_ARGUMENTS)
         self.maximum_ram_slider.value = int(re.search(r"\d+", jvm_args[0]).group())
+
+    
+    def refresh_play_button(self, e: ft.Control = None):
+        if mll.utils.is_minecraft_installed(app_settings.return_mc_directory()):
+            versions = [v["id"] for v in get_versions()["installed"]]
+            if self.installed_dropdown.value == "latest-release":
+                version = mll.utils.get_latest_version()["release"]
+            elif self.installed_dropdown.value == "latest-snapshot":
+                version = mll.utils.get_latest_version()["snapshot"]
+            else:
+                version = self.installed_dropdown.value
+            self.play_button.text = "PLAY" if version in versions else "INSTALL"
+        else:
+            self.play_button.text = "INSTALL"
+        self.play_button.update()
 
 
     def set_username(self, e: ft.Control = None):
@@ -306,24 +321,28 @@ class HomeView():
             self.status_text.value = "Please select a version."
             return
         
-        if selected_version == "Latest release":
+        if selected_version == "latest-release":
             selected_version = mll.utils.get_latest_version()["release"]
             if selected_version not in installed_list_id:
                 self.ui_install_game(None, selected_version)
+                app_settings.save_settings(AppData.LAST_PLAYED, "latest-release")
                 return
-            app_settings.save_settings(AppData.LAST_PLAYED, "")
-        elif selected_version == "Latest snapshot":
+        elif selected_version == "latest-snapshot":
             selected_version = mll.utils.get_latest_version()["snapshot"]
             if selected_version not in installed_list_id:
                 self.ui_install_game(None, selected_version)
+                app_settings.save_settings(AppData.LAST_PLAYED, "latest-snapshot")
                 return
-            app_settings.save_settings(AppData.LAST_PLAYED, "latest_snapshot")
+        elif selected_version not in installed_list_id:
+            self.ui_install_game(None, selected_version)
+            app_settings.save_settings(AppData.LAST_PLAYED, selected_version)
+            return
         else:
             # Save the last played version
             app_settings.save_settings(AppData.LAST_PLAYED, selected_version)
         
         # Run in a thread to avoid blocking the Flet UI
-        buttons_to_disable = [self.play_button, self.installed_dropdown, self.username_input]
+        buttons_to_disable = [self.play_button, self.installed_dropdown, self.versions_button, self.settings_button, self.username_button]
         thread = threading.Thread(target=launch_game, args=(self.page, selected_version, self.status_text, buttons_to_disable, self.play_button))
         thread.daemon = True
         thread.start()
@@ -333,14 +352,9 @@ class HomeView():
         if not selected_version:
             self.status_text.value = "Please select a version."
             return
-        
-        try:
-            self.page.close(self.installation_window)
-        except:
-            pass
         self.page.open(self.progress_window)
-        buttons_to_disable = [self.play_button, self.install_button, self.version_dropdown, self.installed_dropdown, self.username_input]
-        thread = threading.Thread(target=install_version, args=(self.page, app_version, buttons_to_disable, self.progress_window, self.progress_bar,
+        buttons_to_disable = [self.play_button, self.installed_dropdown, self.versions_button, self.settings_button, self.username_button]
+        thread = threading.Thread(target=install_version, args=(self.page, selected_version, buttons_to_disable, self.progress_window, self.progress_bar,
                                                                 self.status_text, self.progress_text))
         thread.daemon = True
         thread.start()
