@@ -7,6 +7,7 @@ from modules.app_config import *
 from modules.launcher import *
 from modules.refresh_handler import *
 from modules.utils import *
+from widgets.app import WindowTittleBar
 import minecraft_launcher_lib as mll
 import threading
 import datetime
@@ -206,6 +207,7 @@ class HomeView():
             spacing=20,
             vertical_alignment=ft.MainAxisAlignment.CENTER,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            appbar=WindowTittleBar(self.page),
             bottom_appbar=ft.BottomAppBar(
                 bgcolor="#3C3C3C",
                 height=100,

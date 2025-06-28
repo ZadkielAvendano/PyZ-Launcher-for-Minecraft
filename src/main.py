@@ -5,6 +5,7 @@
 import flet as ft
 from modules.app_config import *
 from modules.refresh_handler import *
+from widgets.app import WindowTittleBar
 
 theme_transition = ft.PageTransitionTheme.ZOOM
 
@@ -40,6 +41,8 @@ def main(page: ft.Page):
     page.window.height = 700
     page.window.min_height = 500
     page.window.min_width = 600
+    page.window.title_bar_hidden = True
+    page.window.title_bar_buttons_hidden = True
     page.window.center()
     page.theme = theme
     page.theme_mode = ft.ThemeMode.DARK
@@ -55,6 +58,7 @@ def main(page: ft.Page):
     )
 
     # LOADING...
+    page.appbar = WindowTittleBar(page)
     page.add(ft.Text(value="Loading...", size=28, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE, text_align=ft.TextAlign.CENTER))
     page.add(ft.ProgressRing(color=ft.Colors.ON_SURFACE))
     page.update()

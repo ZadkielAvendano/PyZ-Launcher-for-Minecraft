@@ -6,6 +6,7 @@ import flet as ft
 from modules.app_config import *
 from modules.launcher import *
 from widgets.ui import *
+from widgets.app import WindowTittleBar
 import minecraft_launcher_lib as mll
 import json
 import os
@@ -122,19 +123,17 @@ class LauncherProfilesView():
             spacing=20,
             vertical_alignment=ft.MainAxisAlignment.START,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            appbar=ft.AppBar(
-                title=ft.Text("Launcher Profiles", size=25, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
-                actions=[
-                    ft.IconButton(
-                        icon=ft.Icons.ADD,
-                        icon_size=25,
-                        icon_color=ft.Colors.WHITE,
-                        tooltip="New launcher profile",
-                        on_click=self.edit_launcher_profile
-                    )
-                ],
-                bgcolor="#3C3C3C"
-            ),
+            appbar=WindowTittleBar(
+                    self.page,
+                    title_text=ft.Text("Launcher Profiles", size=25, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                    custom_actions=[
+                        ft.IconButton(
+                            icon=ft.Icons.ADD_CIRCLE,
+                            tooltip="New launcher profile",
+                            on_click=self.edit_launcher_profile
+                        )
+                    ]
+                ),
             bgcolor=ft.Colors.TRANSPARENT,
             decoration=ft.BoxDecoration(
                 image=ft.DecorationImage(

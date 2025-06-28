@@ -114,6 +114,7 @@ def __set_progress(page: ft.Page, progress: int, progress_bar: ft.ProgressBar, p
     if current_max != 0:
         progress_bar.value = progress / current_max
         progress_bar.update()
+        page.window.progress_bar = progress / current_max
         __update_status_safe(page, progress_text, f"{progress}/{current_max}")
 
 def __set_max(new_max: int):
@@ -139,6 +140,7 @@ def install_version(page: ft.Page, version_id: str, buttons_to_disable: list, pr
 
         mll.install.install_minecraft_version(versionid=version_id, minecraft_directory=app_settings.return_mc_directory(), callback=callback)
         __update_status_safe(page, status_text, f"Version ({version_id}) installed!")
+        page.window.progress_bar = 0
 
     except Exception as e:
         __update_status_safe(page, status_text, f"Error: {str(e)}")

@@ -5,7 +5,6 @@
 import flet as ft
 import minecraft_launcher_lib as mll
 
-import flet as ft
 
 class LauncherProfileOption(ft.ListTile):
     def __init__(self, launcher_profile: mll.types.VanillaLauncherProfile, on_edit=None, on_remove=None):
