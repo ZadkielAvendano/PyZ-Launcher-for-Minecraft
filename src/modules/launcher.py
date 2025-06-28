@@ -7,7 +7,22 @@ import minecraft_launcher_lib as mll
 from modules.app_config import *
 from modules.refresh_handler import *
 import subprocess
+import logging
+import datetime
 import time
+
+# Create a directory for logs if it doesn't exist
+if not os.path.exists("logs"):
+    os.makedirs("logs")
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(f"logs/launcher-{datetime.date.today()}.log"), # Save the logs to a file
+        logging.StreamHandler() # It also shows them in the console
+    ]
+)
 
 def __update_status_safe(page: ft.Page, control, message):
     """Update a Flet control safely from a thread."""
@@ -32,12 +47,12 @@ def __set_controls_enabled_safe(page: ft.Page, controls, enabled):
 # ----- Launcher Logic -----
 
 
-def launch_game(page: ft.Page, version_id: str, status_text_control: ft.Text, buttons_to_disable: list, play_button: ft.Button):
+def launch_game(home_view, version_id: str, status_text_control: ft.Text, buttons_to_disable: list, play_button: ft.Button):
     """
     Starts Minecraft using the specified version and user settings.
     """
     try:
-        __set_controls_enabled_safe(page, buttons_to_disable, False)
+        __set_controls_enabled_safe(home_view.page, buttons_to_disable, False)
         
         # Launch options
         options = {
@@ -49,29 +64,46 @@ def launch_game(page: ft.Page, version_id: str, status_text_control: ft.Text, bu
         }
 
         # Get the launch command
-        __update_status_safe(page, status_text_control, "Generating launch command...")
+        __update_status_safe(home_view.page, status_text_control, "Generating launch command...")
         minecraft_command = mll.command.get_minecraft_command(version=version_id,
                                                               minecraft_directory=app_settings.return_mc_directory(),
                                                               options=options)
         
-        __update_status_safe(page, status_text_control, "Starting Minecraft...")
+        __update_status_safe(home_view.page, status_text_control, "Starting Minecraft...")
         play_button.text = "Starting Minecraft..."
         play_button.update()
         
         # Command
-        process = subprocess.Popen(minecraft_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=subprocess.CREATE_NO_WINDOW)
-        __update_status_safe(page, status_text_control, f"Minecraft ({app_settings.get_setting(AppData.USERNAME)} - {version_id}) Started. PID: {process.pid}")
+        process = subprocess.Popen(minecraft_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", creationflags=subprocess.CREATE_NO_WINDOW)
+        __update_status_safe(home_view.page, status_text_control, f"Minecraft ({app_settings.get_setting(AppData.USERNAME)} - {version_id}) Started. PID: {process.pid}")
         play_button.text = "Running Minecraft..."
         play_button.update()
         
         # Wait
-        process.wait()
-        __update_status_safe(page, status_text_control, "Minecraft closed.")
+        stdout, stderr = process.communicate()
+
+        # --- EXIT CODE REVIEW AND LOG-IN ---
+        if process.returncode != 0:
+            # If the exit code is not 0, something went wrong.
+            error_message = f"Minecraft closed with an error (code: {process.returncode})."
+            logging.error(error_message)
+            logging.error("--- ERROR DETAILS (stderr) ---")
+            logging.error(stderr if stderr else "Nothing reported on stderr.")
+            logging.error("--- STANDARD OUTPUT (stdout) ---")
+            logging.error(stdout if stdout else "Nothing reported on stdout.")
+            
+            # Update the UI
+            home_view.error_launch_game(f"{stderr}\n{stdout}")
+            __update_status_safe(home_view.page, status_text_control, f"Error launching Minecraft. Check logs/launcher-{datetime.date.today()}.log for details.")
+        else:
+            # The game closed successfully
+            __update_status_safe(home_view.page, status_text_control, "Minecraft closed successfully.")
+            logging.info("Minecraft closed successfully.")
 
     except Exception as e:
-        __update_status_safe(page, status_text_control, f"Error: {str(e)}")
+        __update_status_safe(home_view.page, status_text_control, f"Error: {str(e)}")
     finally:
-        __set_controls_enabled_safe(page, buttons_to_disable, True)
+        __set_controls_enabled_safe(home_view.page, buttons_to_disable, True)
         refresh()
 
 

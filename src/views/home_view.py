@@ -6,8 +6,10 @@ import flet as ft
 from modules.app_config import *
 from modules.launcher import *
 from modules.refresh_handler import *
+from modules.utils import *
 import minecraft_launcher_lib as mll
 import threading
+import datetime
 import re
 import os
 
@@ -175,6 +177,24 @@ class HomeView():
                 ]
         )
 
+        self.error_game_window = ft.AlertDialog(
+                modal=True,
+                title="Error in game execution",
+                bgcolor="#3C3C3C",
+                scrollable=True,
+                content=ft.Column(
+                    expand=False,
+                    controls=[
+                        ft.Text(value="-- Error Message --")
+                    ]
+                ),
+                actions=[
+                    ft.TextButton("Repair version", visible=True, on_click=self.repair_version),
+                    ft.TextButton("View logs", on_click=lambda e: open_file(f"logs/launcher-{datetime.date.today()}.log")),
+                    ft.TextButton("Close", on_click=lambda e: self.page.close(self.error_game_window))
+                    ]
+            )
+
 
         # ---- View ----
 
@@ -242,10 +262,13 @@ class HomeView():
             # Configure installed versions dropdown
             self.installed_dropdown.options = self.installed_options
 
-            if last_played and last_played in [installed["id"] for installed in versions["installed"]]:
+            if last_played and last_played in {"latest-release", "latest-snapshot"}:
                 self.installed_dropdown.value = last_played
-            elif last_played and last_played == "latest-snapshot":
-                self.installed_dropdown.value = "latest-snapshot"
+            elif last_played and mll.vanilla_launcher.do_vanilla_launcher_profiles_exists(app_settings.return_mc_directory()):
+                for profile in mll.vanilla_launcher.load_vanilla_launcher_profiles(app_settings.return_mc_directory()):
+                    if profile["version"] == last_played:
+                        self.installed_dropdown.value = last_played
+                        break
             else:
                 self.installed_dropdown.value = "latest-release"
                 if last_played:
@@ -314,36 +337,16 @@ class HomeView():
 
     
     def ui_launch_game(self, e: ft.Control = None):
-        selected_version = self.installed_dropdown.value
+        selected_version = self.return_current_version(save_version=True)
         installed_list_id = [v["id"] for v in get_versions()["installed"]]
 
-        if not selected_version:
-            self.status_text.value = "Please select a version."
-            return
-        
-        if selected_version == "latest-release":
-            selected_version = mll.utils.get_latest_version()["release"]
-            if selected_version not in installed_list_id:
-                self.ui_install_game(None, selected_version)
-                app_settings.save_settings(AppData.LAST_PLAYED, "latest-release")
-                return
-        elif selected_version == "latest-snapshot":
-            selected_version = mll.utils.get_latest_version()["snapshot"]
-            if selected_version not in installed_list_id:
-                self.ui_install_game(None, selected_version)
-                app_settings.save_settings(AppData.LAST_PLAYED, "latest-snapshot")
-                return
-        elif selected_version not in installed_list_id:
+        if selected_version not in installed_list_id:
             self.ui_install_game(None, selected_version)
-            app_settings.save_settings(AppData.LAST_PLAYED, selected_version)
             return
-        else:
-            # Save the last played version
-            app_settings.save_settings(AppData.LAST_PLAYED, selected_version)
         
         # Run in a thread to avoid blocking the Flet UI
         buttons_to_disable = [self.play_button, self.installed_dropdown, self.versions_button, self.settings_button, self.username_button]
-        thread = threading.Thread(target=launch_game, args=(self.page, selected_version, self.status_text, buttons_to_disable, self.play_button))
+        thread = threading.Thread(target=launch_game, args=(self, selected_version, self.status_text, buttons_to_disable, self.play_button))
         thread.daemon = True
         thread.start()
 
@@ -358,3 +361,34 @@ class HomeView():
                                                                 self.status_text, self.progress_text))
         thread.daemon = True
         thread.start()
+
+    def error_launch_game(self, error_message: str):
+        selected_version = self.return_current_version()
+        self.error_game_window.actions[0].visible = True if mll.utils.is_vanilla_version(selected_version) else False
+        self.error_game_window.content.controls = [ft.Text(value=error_message)]
+        self.page.open(self.error_game_window)
+
+    def repair_version(self, e):
+        selected_version = self.return_current_version()
+        if mll.utils.is_vanilla_version(selected_version):
+            self.ui_install_game(e, selected_version)
+        self.page.close(self.error_game_window)
+
+    def return_current_version(self, save_version: bool = False) -> str:
+        selected_version = self.installed_dropdown.value
+
+        if not selected_version:
+            self.status_text.value = "Please select a version."
+            return
+
+        if selected_version == "latest-release":
+            selected_version = mll.utils.get_latest_version()["release"]
+            app_settings.save_settings(AppData.LAST_PLAYED, "latest-release") if save_version else None
+        elif selected_version == "latest-snapshot":
+            selected_version = mll.utils.get_latest_version()["snapshot"]
+            app_settings.save_settings(AppData.LAST_PLAYED, "latest-snapshot") if save_version else None
+        else:
+            # Save the last played version
+            app_settings.save_settings(AppData.LAST_PLAYED, selected_version) if save_version else None
+        
+        return selected_version

@@ -263,6 +263,7 @@ class LauncherProfilesView():
             }
             mll.vanilla_launcher.add_vanilla_launcher_profile(app_settings.return_mc_directory(), profile)
             print(f"The player profile was established: {profile['name']}")
+            app_settings.save_settings(AppData.LAST_PLAYED, profile["version"])
             self.page.close(self.launcher_profiles_window)
             refresh()
 

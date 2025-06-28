@@ -36,6 +36,7 @@ class LauncherProfileOption(ft.ListTile):
         self.on_click=lambda e: on_edit(self.launcher_profile)
 
         if self.launcher_profile.get("versionType") != "custom":
-            self.trailing.items.pop()
+            if len(self.trailing.items) > 1:
+                self.trailing.items.pop()
 
         # menu = ft.Row(alignment=ft.MainAxisAlignment.END, vertical_alignment=ft.CrossAxisAlignment.CENTER, width=100, controls=[ft.IconButton(icon=ft.Icons.DELETE, icon_color=ft.Colors.ERROR), ft.IconButton(icon=ft.Icons.EDIT)])
