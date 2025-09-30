@@ -3,6 +3,7 @@
 ![PyZ Launcher](src/assets/images/home.png)
 
 PyZ Launcher for Minecraft is an open source launcher developed with `Python`, `Flet` and `minecraft-launcher-lib` designed to simplify the installation and management of Minecraft versions.
+**Website:** [PyZ Launcher for Minecraft](https://pyz-launcher-for-minecraft.vercel.app/)
 
 ## Roadmap
 
