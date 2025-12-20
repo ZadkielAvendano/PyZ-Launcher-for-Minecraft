@@ -10,6 +10,7 @@ import subprocess
 import logging
 import datetime
 import time
+import re
 
 # Create a directory for logs if it doesn't exist
 if not os.path.exists("logs"):
@@ -55,13 +56,15 @@ def launch_game(home_view, version_id: str, status_text_control: ft.Text, button
         __set_controls_enabled_safe(home_view.page, buttons_to_disable, False)
         
         # Launch options
-        options = {
+        options: mll.types.MinecraftOptions = {
             "username": app_settings.get_setting(AppData.USERNAME),
             "uuid": app_settings.get_setting(AppData.UUID), # UUID offline
             "token": "", # offline
-            # "executablePath": "/path/to/your/java/bin/java" # Java
             "jvmArguments": app_settings.get_setting(AppData.JVM_ARGUMENTS) # JVM
         }
+
+        if app_settings.get_setting(AppData.EXECUTABLE_PATH) != "":
+            options["executablePath"] = app_settings.get_setting(AppData.EXECUTABLE_PATH)
 
         # Get the launch command
         __update_status_safe(home_view.page, status_text_control, "Generating launch command...")
@@ -101,6 +104,7 @@ def launch_game(home_view, version_id: str, status_text_control: ft.Text, button
             logging.info("Minecraft closed successfully.")
 
     except Exception as e:
+        home_view.error_launch_game(f"Error: {str(e)}")
         __update_status_safe(home_view.page, status_text_control, f"Error: {str(e)}")
     finally:
         __set_controls_enabled_safe(home_view.page, buttons_to_disable, True)
@@ -137,10 +141,31 @@ def install_version(page: ft.Page, version_id: str, buttons_to_disable: list, pr
             "setProgress": lambda progress: __set_progress(page, progress, progress_bar, progress_text),
             "setMax": __set_max
             }
+        
+        check = check_version(version_id)
 
-        mll.install.install_minecraft_version(versionid=version_id, minecraft_directory=app_settings.return_mc_directory(), callback=callback)
-        __update_status_safe(page, status_text, f"Version ({version_id}) installed!")
-        page.window.progress_bar = 0
+        if check != "not_compatible" and type(check) != str:
+
+            if check[0] == "vanilla":
+                # Vanilla installer
+                print(f"Installing vanilla version...\nVersion: {version_id}")
+                mll.install.install_minecraft_version(version=version_id, minecraft_directory=app_settings.return_mc_directory(), callback=callback)
+                __update_status_safe(page, status_text, f"Version ({version_id}) installed!")
+                page.window.progress_bar = 0
+
+            elif check[0] == "mod_loader":
+                # Mod loader installer
+                print(f"Installing mod loader version...\nVersion: {version_id} Mod Loader: {check[1]} Loader Version: {check[2]} Minecraft Version: {check[3]}")
+                mod_loader = mll.mod_loader.get_mod_loader(check[1])
+                mod_loader.install(minecraft_version=check[3], minecraft_directory=app_settings.return_mc_directory(), loader_version=check[2], callback=callback,
+                                   java=app_settings.get_setting(AppData.EXECUTABLE_PATH) if app_settings.get_setting(AppData.EXECUTABLE_PATH) != "" else None)
+                __update_status_safe(page, status_text, f"Version ({version_id}) with {check[1]} installed!")
+                page.window.progress_bar = 0
+
+            else:
+                raise Exception("This version is not compatible with the launcher or mod loaders installed.")
+        else:
+            raise Exception("This version is not compatible with the launcher or mod loaders installed.")
 
     except Exception as e:
         __update_status_safe(page, status_text, f"Error: {str(e)}")
@@ -152,15 +177,66 @@ def install_version(page: ft.Page, version_id: str, buttons_to_disable: list, pr
 
 
 
-def get_versions() -> dict:
-    """Returns a dict of all Minecraft versions (installed, release, snapshot, old_beta, old_alpha)"""
+def check_version(version: str) -> tuple:
+    """
+    Returns:\n
+    "vanilla" -> Vanilla version\n
+    "mod_loader" -> Mod loader version\n
+    "not_compatible" -> Not compatible version
+    """
+    if mll.utils.is_vanilla_version(version):
+        return "vanilla", version
+    else:
+        if any(elem in version for elem in ["fabric", "forge", "quilt"]):
+                    if "fabric-loader" in version:
+                        loader = "fabric"
+                    elif "quilt-loader" in version:    
+                        loader = "quilt"
+                    elif "-forge-" in version:
+                        loader = "forge"
 
-    versions = mll.utils.get_version_list()
-    installed = mll.utils.get_installed_versions(app_settings.return_mc_directory())
-    return {
-        "installed": installed,
-        "release": [v["id"] for v in versions if v["type"] == "release"],
-        "snapshot": [v["id"] for v in versions if v["type"] == "snapshot"],
-        "old_beta": [v["id"] for v in versions if v["type"] == "old_beta"],
-        "old_alpha": [v["id"] for v in versions if v["type"] == "old_alpha"]
+                    version_items = version.split("-")
+                    print(version_items)
+                    if loader == "fabric" or loader == "quilt":
+                        mc_version = version_items[3]
+                        mod_loader_version = version_items[2]
+                    elif loader == "forge":
+                        mc_version = version_items[0]
+                        mod_loader_version = version_items[2]
+
+                    mod_loader = mll.mod_loader.get_mod_loader(loader)
+                    if mc_version and mod_loader.is_minecraft_version_supported(mc_version):
+                        return "mod_loader", loader, mod_loader_version, mc_version
+        else:
+            return "not_compatible"
+
+
+
+def get_versions(version_type: str = "vanilla") -> dict:
+    """Returns a dict of all Minecraft versions (installed, release, snapshot, old_beta, old_alpha)"""
+    # Mod loaders
+    if version_type in mll.mod_loader.list_mod_loader():
+        mod_loader = mll.mod_loader.get_mod_loader(version_type)
+        if mod_loader:
+            minecraft_versions = mod_loader.get_minecraft_versions(stable_only=True)
+            installed = mll.utils.get_installed_versions(app_settings.return_mc_directory())
+            return {
+                "installed": installed,
+                "version": minecraft_versions
+            }
+        else:
+            return {
+                "installed": [],
+                "version": []
+            }
+    # Vanilla versions
+    else:
+        versions = mll.utils.get_version_list()
+        installed = mll.utils.get_installed_versions(app_settings.return_mc_directory())
+        return {
+            "installed": installed,
+            "release": [v["id"] for v in versions if v["type"] == "release"],
+            "snapshot": [v["id"] for v in versions if v["type"] == "snapshot"],
+            "old_beta": [v["id"] for v in versions if v["type"] == "old_beta"],
+            "old_alpha": [v["id"] for v in versions if v["type"] == "old_alpha"]
     }

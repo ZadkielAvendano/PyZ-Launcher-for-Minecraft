@@ -1,0 +1,11 @@
+fabric:
+fabric-loader-LOADER_VERSION-MC_VERSION
+
+forge:
+MC_VERSION-forge-LOADER_VERSION
+
+neoforge:
+neoforge-LOADER_VERSION
+
+quilt:
+quilt-loader-LOADER_VERSION-MC_VERSION

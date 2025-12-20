@@ -54,6 +54,16 @@ class HomeView():
             value=app_settings.return_mc_directory()
         )
 
+        self.java_directory_input = ft.TextField(
+            label="Java directory",
+            hint_text="Empty to use the default directory",
+            width=350,
+            border_color=ft.Colors.WHITE24,
+            color=ft.Colors.WHITE,
+            focused_bgcolor="#4A4A4A",
+            focused_border_color=ft.Colors.PRIMARY
+        )
+
         self.installed_dropdown = ft.Dropdown(
             label="Installed versions",
             hint_text="Choose a version",
@@ -141,7 +151,7 @@ class HomeView():
         )
 
         self.settings_window = ft.AlertDialog(
-            modal=True,
+            modal=False,
             title="Settings",
             bgcolor="#3C3C3C",
             scrollable=True,
@@ -149,20 +159,22 @@ class HomeView():
                 expand=False,
                 controls=[
                     self.minecraft_directory_input,
+                    ft.Text("Java executable:", size=15, weight=ft.FontWeight.BOLD),
+                    self.java_directory_input,
                     ft.Text("Maximum memory (RAM):", size=15, weight=ft.FontWeight.BOLD),
                     self.maximum_ram_slider,
-                    # ft.Text("Java executable:", size=15, weight=ft.FontWeight.BOLD),
                     # ft.Text("JVM arguments:", size=15, weight=ft.FontWeight.BOLD)
                 ]
             ),
             actions=[
                 ft.TextButton("Apply settings", on_click=self.set_settings),
-                ft.TextButton("Close", on_click=lambda e: page.close(self.settings_window))
-                ]
+                ft.TextButton("Close", on_click=self.close_settings_window)
+                ],
+            on_dismiss=self.close_settings_window
         )
 
         self.username_window = ft.AlertDialog(
-            modal=True,
+            modal=False,
             title="Username",
             bgcolor="#3C3C3C",
             scrollable=True,
@@ -174,8 +186,9 @@ class HomeView():
             ),
             actions=[
                 ft.TextButton("Apply", on_click=self.set_username),
-                ft.TextButton("Close", on_click=lambda e: page.close(self.username_window))
-                ]
+                ft.TextButton("Close", on_click=self.close_username_window)
+                ],
+            on_dismiss=self.close_username_window
         )
 
         self.error_game_window = ft.AlertDialog(
@@ -245,7 +258,19 @@ class HomeView():
             scroll=False
         )
 
-    
+
+    def close_username_window(self, e: ft.Control = None):
+        self.username_input.value = app_settings.get_setting(AppData.USERNAME)
+        self.username_input.error_text = None
+        self.page.close(self.username_window)
+
+    def close_settings_window(self, e: ft.Control = None):
+        self.minecraft_directory_input.value = app_settings.return_mc_directory()
+        self.java_directory_input.value = app_settings.get_setting(AppData.EXECUTABLE_PATH)
+        self.maximum_ram_slider.value = int(re.search(r"\d+", app_settings.get_setting(AppData.JVM_ARGUMENTS)[0]).group())
+        self.minecraft_directory_input.error_text = None
+        self.java_directory_input.error_text = None
+        self.page.close(self.settings_window)
 
     def refresh_ui(self, e: ft.Control = None):
         versions = get_versions()
@@ -290,6 +315,9 @@ class HomeView():
         self.info_minecraft_dir.value = f"Minecraft directory: {app_settings.return_mc_directory()}"
         self.minecraft_directory_input.value = app_settings.return_mc_directory()
 
+        # Display Java directory path
+        self.java_directory_input.value = app_settings.get_setting(AppData.EXECUTABLE_PATH)
+
         # Configure maximum RAM slider from JVM arguments
         jvm_args = app_settings.get_setting(AppData.JVM_ARGUMENTS)
         self.maximum_ram_slider.value = int(re.search(r"\d+", jvm_args[0]).group())
@@ -324,15 +352,22 @@ class HomeView():
 
     def set_settings(self, e: ft.Control = None):
         minecraft_directory: str = self.minecraft_directory_input.value
+        java_directory: str = self.java_directory_input.value
         maximum_ram: int = round(self.maximum_ram_slider.value)
         if not os.path.exists(minecraft_directory) and minecraft_directory != "":
             self.minecraft_directory_input.error_text = "Enter a valid directory"
             self.page.update()
             return
+        elif not os.path.exists(java_directory) and java_directory != "":
+            self.java_directory_input.error_text = "Enter a valid directory"
+            self.page.update()
+            return
         else:
             app_settings.save_settings(AppData.MC_DIRECTORY, minecraft_directory)
+            app_settings.save_settings(AppData.EXECUTABLE_PATH, java_directory)
             app_settings.save_settings(AppData.JVM_ARGUMENTS, [f"-Xmx{maximum_ram}G", f"-Xms{maximum_ram}G"])
             self.minecraft_directory_input.error_text = None
+            self.java_directory_input.error_text = None
             self.page.close(self.settings_window)
             refresh()
         
