@@ -8,8 +8,8 @@ authors = [
     { name = "Zadkiel Avendano"}
 ]
 dependencies = [
-  "flet==0.28.2",
-  "minecraft-launcher-lib==7.1"
+  "flet==0.28.3",
+  "minecraft-launcher-lib==8.0"
 ]
 
 [tool.flet]
