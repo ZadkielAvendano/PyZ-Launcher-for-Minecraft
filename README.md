@@ -8,14 +8,14 @@ PyZ Launcher for Minecraft is an open source launcher developed with `Python`, `
 ## Roadmap
 
 ### ✅ Current Features:
-- Install all **vanilla Minecraft versions** (excluding Forge / Fabric. etc).
+- Install all **vanilla Minecraft versions**.
+- **Forge, Fabric & Quilt integration** for modded gameplay.
 - **Support for snapshots** to allow testing new game versions.
 - Set **maximum RAM allocation**.
 - Define the **Minecraft directory path**.
 - Play **offline mode** without signing into Microsoft. (Upcoming authentication)
 
 ### 🔜 Upcoming Features:
-- **Forge & Fabric integration** for modded gameplay.
 - **Improved UI/UX enhancements** for a smoother experience.
 - **Authentication with Microsoft accounts** for online gameplay.
 - **Server list & multiplayer support** for easier connections.
