@@ -8,9 +8,11 @@ from modules.launcher import *
 from modules.refresh_handler import *
 from modules.utils import *
 from widgets.app import WindowTittleBar
+from widgets.RotatingText import HighlightRotatingText
 import minecraft_launcher_lib as mll
 import threading
 import datetime
+import psutil
 import re
 import os
 
@@ -79,10 +81,11 @@ class HomeView():
             value=int(re.search(r"\d+", app_settings.get_setting(AppData.JVM_ARGUMENTS)[0]).group()),
             label="{value} GB",
             min=1, 
-            max=16,
-            divisions=15,
-            width=350
-            )
+            max=psutil.virtual_memory().total // (1024**3), # Max RAM in GB
+            divisions=psutil.virtual_memory().total // (1024**3) - 1,
+            width=350,
+            on_change=self.refresh_ram_slider
+        )
 
         self.play_button = ft.FilledButton(
             text="PLAY",
@@ -215,7 +218,25 @@ class HomeView():
 
         self.view = ft.View(
             "/",
-            [ft.Text(app_name.upper(), size=30, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE)],
+            [
+                ft.Text(app_name.upper(), size=30, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                HighlightRotatingText(
+                    static_text="for Minecraft",
+                    phrases=["Vanilla", "Fabric", "Forge", "Quilt"],
+                    bold=True,
+                    box_color=ft.Colors.GREEN_ACCENT_700,
+                    color=ft.Colors.WHITE,
+                    direction="bottom",
+                    loop=True,
+                    static_style=ft.TextStyle(
+                        color=ft.Colors.WHITE,
+                        size=30,
+                        weight="bold"
+                    ),
+                    width_factor=22,
+                    interval=2
+                )
+                ],
             padding=10,
             spacing=20,
             vertical_alignment=ft.MainAxisAlignment.CENTER,
@@ -271,6 +292,9 @@ class HomeView():
         self.minecraft_directory_input.error_text = None
         self.java_directory_input.error_text = None
         self.page.close(self.settings_window)
+        self.refresh_ram_slider()
+
+
 
     def refresh_ui(self, e: ft.Control = None):
         versions = get_versions()
@@ -321,8 +345,21 @@ class HomeView():
         # Configure maximum RAM slider from JVM arguments
         jvm_args = app_settings.get_setting(AppData.JVM_ARGUMENTS)
         self.maximum_ram_slider.value = int(re.search(r"\d+", jvm_args[0]).group())
+        self.refresh_ram_slider()
 
+
+    def refresh_ram_slider(self, e: ft.Control = None):
+        system_ram = psutil.virtual_memory().total // (1024**3)
+        self.settings_window.content.controls[3].value = f"Maximum memory (RAM): {round(self.maximum_ram_slider.value)} GB"
+        if self.maximum_ram_slider.value < system_ram * 0.6:
+            self.maximum_ram_slider.active_color = ft.Colors.PRIMARY
+        elif self.maximum_ram_slider.value > system_ram * 0.8:
+            self.maximum_ram_slider.active_color = ft.Colors.ERROR
+        else:
+            self.maximum_ram_slider.active_color = ft.Colors.YELLOW_200
+        self.page.update()
     
+
     def refresh_play_button(self, e: ft.Control = None):
         if mll.utils.is_minecraft_installed(app_settings.return_mc_directory()):
             versions = [v["id"] for v in get_versions()["installed"]]
@@ -336,6 +373,7 @@ class HomeView():
         else:
             self.play_button.text = "INSTALL"
         self.play_button.update()
+
 
 
     def set_username(self, e: ft.Control = None):
@@ -386,8 +424,8 @@ class HomeView():
         thread = threading.Thread(target=launch_game, args=(self, selected_version, self.status_text, buttons_to_disable, self.play_button))
         thread.daemon = True
         thread.start()
-
     
+
     def ui_install_game(self, e: ft.Control = None, selected_version: str = None):
         if not selected_version:
             self.status_text.value = "Please select a version."
@@ -399,17 +437,20 @@ class HomeView():
         thread.daemon = True
         thread.start()
 
+
     def error_launch_game(self, error_message: str):
         selected_version = self.return_current_version()
         self.error_game_window.actions[0].visible = True if mll.utils.is_vanilla_version(selected_version) else False
         self.error_game_window.content.controls = [ft.Text(value=error_message)]
         self.page.open(self.error_game_window)
 
+
     def repair_version(self, e):
         selected_version = self.return_current_version()
         if mll.utils.is_vanilla_version(selected_version):
             self.ui_install_game(e, selected_version)
         self.page.close(self.error_game_window)
+
 
     def return_current_version(self, save_version: bool = False) -> str:
         selected_version = self.installed_dropdown.value

@@ -60,7 +60,10 @@ def launch_game(home_view, version_id: str, status_text_control: ft.Text, button
             "username": app_settings.get_setting(AppData.USERNAME),
             "uuid": app_settings.get_setting(AppData.UUID), # UUID offline
             "token": "", # offline
-            "jvmArguments": app_settings.get_setting(AppData.JVM_ARGUMENTS) # JVM
+            "jvmArguments": app_settings.get_setting(AppData.JVM_ARGUMENTS), # JVM Arguments
+            # Launcher info
+            "launcherName": app_name,
+            "launcherVersion": app_version,
         }
 
         if app_settings.get_setting(AppData.EXECUTABLE_PATH) != "":

@@ -9,7 +9,8 @@ authors = [
 ]
 dependencies = [
   "flet==0.28.3",
-  "minecraft-launcher-lib==8.0"
+  "minecraft-launcher-lib==8.0",
+  "psutil==7.2.0"
 ]
 
 [tool.flet]

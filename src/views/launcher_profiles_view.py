@@ -107,7 +107,7 @@ class LauncherProfilesView():
         )
 
         self.launcher_profiles_window = ft.AlertDialog(
-            modal=True,
+            modal=False,
             title="Minecraft Launcher Profile",
             bgcolor="#3C3C3C",
             scrollable=True,
@@ -122,7 +122,8 @@ class LauncherProfilesView():
                     self.confirm_button
                 ]
             ),
-            actions=[ft.TextButton("Close", on_click=lambda e: page.close(self.launcher_profiles_window))]
+            actions=[ft.TextButton("Close", on_click=lambda e: page.close(self.launcher_profiles_window))],
+            on_dismiss=lambda e: page.close(self.launcher_profiles_window)
         )
 
         
