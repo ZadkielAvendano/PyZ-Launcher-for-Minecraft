@@ -103,7 +103,7 @@ class LauncherProfilesView():
             width=300,
             height=50,
             style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5)),
-            tooltip="Apply"
+            tooltip="Create a new launcher profile"
         )
 
         self.launcher_profiles_window = ft.AlertDialog(

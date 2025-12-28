@@ -6,13 +6,12 @@ import flet as ft
 from modules.app_config import *
 from modules.launcher import *
 from modules.refresh_handler import *
-from modules.utils import *
+from modules.utils import system_ram, open_file
 from widgets.app import WindowTittleBar
 from widgets.RotatingText import HighlightRotatingText
 import minecraft_launcher_lib as mll
 import threading
 import datetime
-import psutil
 import re
 import os
 
@@ -33,6 +32,10 @@ class HomeView():
             color=ft.Colors.WHITE,
             size=20
             )
+
+        self.maximum_ram_text = ft.Text("Maximum memory (RAM):", size=15, weight=ft.FontWeight.BOLD)
+
+        self.system_ram_text = ft.Text("System RAM: / Used RAM: / Available RAM:", size=12, italic=True, color=ft.Colors.GREY_500,)
 
         self.username_input = ft.TextField(
             label="Username (Offline)",
@@ -81,8 +84,8 @@ class HomeView():
             value=int(re.search(r"\d+", app_settings.get_setting(AppData.JVM_ARGUMENTS)[0]).group()),
             label="{value} GB",
             min=1, 
-            max=psutil.virtual_memory().total // (1024**3), # Max RAM in GB
-            divisions=psutil.virtual_memory().total // (1024**3) - 1,
+            max=system_ram()["total"], # Max RAM in GB
+            divisions=system_ram()["total"] - 1,
             width=350,
             on_change=self.refresh_ram_slider
         )
@@ -158,15 +161,44 @@ class HomeView():
             title="Settings",
             bgcolor="#3C3C3C",
             scrollable=True,
-            content=ft.Column(
-                expand=False,
-                controls=[
-                    self.minecraft_directory_input,
-                    ft.Text("Java executable:", size=15, weight=ft.FontWeight.BOLD),
-                    self.java_directory_input,
-                    ft.Text("Maximum memory (RAM):", size=15, weight=ft.FontWeight.BOLD),
-                    self.maximum_ram_slider,
-                    # ft.Text("JVM arguments:", size=15, weight=ft.FontWeight.BOLD)
+            content=ft.Tabs(
+                selected_index=0,
+                animation_duration=300,
+                height=320,
+                width=400,
+                expand=True,
+                tabs=[
+                    ft.Tab(
+                        text="Game",
+                        content=ft.Column(
+                            expand=False,
+                            horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+                            controls=[
+                                ft.Container(height=10),
+                                self.minecraft_directory_input,
+                                ft.Text("Java executable:", size=15, weight=ft.FontWeight.BOLD),
+                                self.java_directory_input,
+                                self.maximum_ram_text,
+                                self.system_ram_text,
+                                self.maximum_ram_slider,
+                                # ft.Text("JVM arguments:", size=15, weight=ft.FontWeight.BOLD)
+                            ]
+                        )
+                    ),
+                    ft.Tab(
+                        text="Launcher",
+                        content=ft.Column(
+                            expand=False,
+                            horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+                            controls=[
+                                ft.Container(height=10),
+                                ft.Text(f"App Name: {app_name}", size=15),
+                                ft.Text(f"App Version: {app_version}", size=15),
+                                ft.Text("Development" if dev_mode else "Production", size=15),
+                                # Add advanced settings here
+                            ]
+                        )
+                    )
                 ]
             ),
             actions=[
@@ -291,6 +323,7 @@ class HomeView():
         self.maximum_ram_slider.value = int(re.search(r"\d+", app_settings.get_setting(AppData.JVM_ARGUMENTS)[0]).group())
         self.minecraft_directory_input.error_text = None
         self.java_directory_input.error_text = None
+        self.settings_window.content.selected_index = 0
         self.page.close(self.settings_window)
         self.refresh_ram_slider()
 
@@ -349,14 +382,17 @@ class HomeView():
 
 
     def refresh_ram_slider(self, e: ft.Control = None):
-        system_ram = psutil.virtual_memory().total // (1024**3)
-        self.settings_window.content.controls[3].value = f"Maximum memory (RAM): {round(self.maximum_ram_slider.value)} GB"
-        if self.maximum_ram_slider.value < system_ram * 0.6:
-            self.maximum_ram_slider.active_color = ft.Colors.PRIMARY
-        elif self.maximum_ram_slider.value > system_ram * 0.8:
+        total_ram = system_ram()["total"]
+        used_ram = system_ram()["used"]
+        available_ram = system_ram()["available"]
+        self.maximum_ram_text.value = f"Maximum memory (RAM): {round(self.maximum_ram_slider.value)} GB"
+        self.system_ram_text.value = f"System RAM: {total_ram} GB / Used RAM: {used_ram} GB / Available RAM: {available_ram} GB"
+        if self.maximum_ram_slider.value > total_ram * 0.8:
             self.maximum_ram_slider.active_color = ft.Colors.ERROR
-        else:
+        elif self.maximum_ram_slider.value + used_ram > total_ram:
             self.maximum_ram_slider.active_color = ft.Colors.YELLOW_200
+        else:
+            self.maximum_ram_slider.active_color = ft.Colors.PRIMARY
         self.page.update()
     
 

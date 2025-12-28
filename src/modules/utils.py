@@ -1,6 +1,22 @@
 import os
 import subprocess
 import platform
+import psutil
+
+def system_ram():
+    return {
+        "total": psutil.virtual_memory().total // (1024**3),  # Total RAM in GB
+        "available": psutil.virtual_memory().available // (1024**3),  # Available RAM in GB
+        "percent": psutil.virtual_memory().percent,  # Percentage of used RAM
+        "used": psutil.virtual_memory().used // (1024**3),  # Used RAM in GB
+        "free": psutil.virtual_memory().free // (1024**3)  # Free RAM in GB
+    }
+
+print(f"System RAM: {system_ram()['total']} GB")
+print(f"Available RAM: {system_ram()['available']} GB")
+print(f"Percentage RAM: {system_ram()['percent']} %")
+print(f"Used RAM: {system_ram()['used']} GB")
+print(f"Free RAM: {system_ram()['free']} GB")
 
 def open_file(file):
     try:
