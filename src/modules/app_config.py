@@ -24,7 +24,8 @@ default_data = {
     "lastPlayed": "", # ID of the last version of Minecraft played
     "minecraftDirectory": "", # Empty for the default Minecraft directory
     "executablePath": "", # Empty for the default Java directory
-    "jvmArguments": ["-Xmx2G", "-Xms2G"] # JVM Arguments
+    "jvmArguments": ["-Xmx2G", "-Xms2G"], # JVM Arguments
+    "checkUpdatesOnStartup": True
     }
 
 try:
@@ -44,6 +45,7 @@ class AppData(Enum):
     MC_DIRECTORY = "minecraftDirectory"
     EXECUTABLE_PATH = "executablePath"
     JVM_ARGUMENTS = "jvmArguments"
+    CHECK_UPDATES_ON_STARTUP = "checkUpdatesOnStartup"
 
 
 class Settings():

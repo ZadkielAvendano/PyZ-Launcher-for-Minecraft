@@ -100,6 +100,15 @@ class HomeView():
             tooltip="Install and play Minecraft"
         )
 
+        self.check_for_updates_button = ft.FilledButton(
+            text="Check for updates",
+            on_click=self.check_for_updates,
+            width=300,
+            height=50,
+            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5)),
+            tooltip="Check for updates",
+        )
+
         self.versions_button = ft.IconButton(
             icon=ft.Icons.DOWNLOAD,
             icon_size=25,
@@ -135,6 +144,14 @@ class HomeView():
             italic=True
         )
 
+        self.check_on_startup = ft.Switch(
+            label="Check for updates on startup: ",
+            label_position=ft.LabelPosition.LEFT,
+            label_style=ft.TextStyle(size=15, weight=ft.FontWeight.BOLD),
+            value=app_settings.get_setting(AppData.CHECK_UPDATES_ON_STARTUP),
+            on_change=lambda e: app_settings.save_settings(AppData.CHECK_UPDATES_ON_STARTUP, e.control.value)
+        )
+
         self.progress_bar = ft.ProgressBar(value=0, width=400, border_radius=5)
 
         self.progress_window = ft.AlertDialog(
@@ -164,7 +181,7 @@ class HomeView():
             scrollable=True,
             content=ft.Tabs(
                 selected_index=0,
-                animation_duration=300,
+                animation_duration=0,
                 height=360,
                 width=400,
                 expand=True,
@@ -197,14 +214,9 @@ class HomeView():
                             horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
                             controls=[
                                 ft.Container(height=10),
-                                ft.FilledButton(
-                                    text="Check for updates",
-                                    on_click=lambda e: self.page.open(self.updater_window),
-                                    width=300,
-                                    height=50,
-                                    style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5)),
-                                    tooltip="Check for updates"
-                                ),
+                                self.check_for_updates_button,
+                                self.check_on_startup,
+                                ft.Divider(),
                                 ft.Text(f"App Name: {app_name}", size=15),
                                 ft.Text(f"App Version: {app_version}", size=15),
                                 ft.Text("Environment: " + ("Development" if dev_mode else "Production"), size=15),
@@ -264,12 +276,19 @@ class HomeView():
                 content=ft.Column(
                     expand=False,
                     controls=[
-                        ft.Text(value="Update available: -- Version --")
+                        ft.FilledButton(
+                            text="Download Update",
+                            width=300,
+                            height=50,
+                            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5)),
+                            on_click=lambda e: self.page.close(self.updater_window),
+                        ),
+                        ft.Text(value="Update available: -- Version --"),
+                        ft.Divider(),
+                        self.check_on_startup
                     ]
                 ),
                 actions=[
-                    ft.FilledButton("Download Update", style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5)),
-                              on_click=lambda e: self.page.close(self.updater_window)),
                     ft.TextButton("Close", on_click=lambda e: self.page.close(self.updater_window))
                 ]
             )
@@ -412,7 +431,7 @@ class HomeView():
         self.refresh_ram_slider()
 
         if self.ready == False:
-            self.check_for_updates()
+            self.check_for_updates(on_startup=app_settings.get_setting(AppData.CHECK_UPDATES_ON_STARTUP))
 
 
     def refresh_ram_slider(self, e: ft.Control = None):
@@ -435,7 +454,7 @@ class HomeView():
         if selected_index == 0:
             self.settings_window.content.height = 360
         elif selected_index == 1:
-            self.settings_window.content.height = 250
+            self.settings_window.content.height = 290
         self.page.update()
 
 
@@ -551,12 +570,41 @@ class HomeView():
         return selected_version
     
 
-    def check_for_updates(self, e: ft.Control = None):
+    def check_for_updates(self, e: ft.Control = None, open_dialog_window: bool = True, on_startup: bool = False):
+        tittle_bar: WindowTittleBar = self.view.appbar
+        tittle_bar.remove_custom_actions()
+        tittle_bar.add_custom_action(action=ft.ProgressRing(color=ft.Colors.GREEN_ACCENT_700, width=20, height=20))
+        self.check_for_updates_button.disabled = True
+        self.check_for_updates_button.content = ft.Row(alignment=ft.MainAxisAlignment.CENTER, controls=[
+            ft.Text("Checking for updates...", size=15, weight=ft.FontWeight.BOLD),
+            ft.ProgressRing(color=ft.Colors.ON_SURFACE, width=20, height=20)
+            ])
+        self.page.update()
         has_update_result = has_update()
         if has_update_result[0]:
+            self.status_text.value = f"New Update available! Latest version: {has_update_result[1]}"
+            tittle_bar.remove_custom_actions()
+            tittle_bar.add_custom_action(
+                action=ft.IconButton(
+                            icon=ft.Icons.UPDATE,
+                            tooltip="Update Available",
+                            icon_color=ft.Colors.GREEN_ACCENT_700,
+                            on_click=self.check_for_updates
+                        )
+            )
+            if open_dialog_window or on_startup:
+                self.page.open(self.updater_window)
+                self.updater_window.title = "Update Available"
+                self.updater_window.content.controls[1].value = f"Latest version: {has_update_result[1]}"
+                self.updater_window.content.controls[0].visible = True
+        elif open_dialog_window and not on_startup:
             self.page.open(self.updater_window)
-            self.updater_window.content.controls = [ft.Text(value=f"Update available: {has_update_result[1]}")]
+            self.updater_window.title = "No Updates Available"
+            self.updater_window.content.controls[1].value = "You are using the latest version."
+            self.updater_window.content.controls[0].visible = False
         else:
             self.status_text.value = "You are using the latest version."
+        self.check_for_updates_button.disabled = False
+        self.check_for_updates_button.content = None
         self.ready = True
         self.page.update()
