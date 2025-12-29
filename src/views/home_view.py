@@ -602,8 +602,9 @@ class HomeView():
             self.updater_window.title = "No Updates Available"
             self.updater_window.content.controls[1].value = "You are using the latest version."
             self.updater_window.content.controls[0].visible = False
+            tittle_bar.remove_custom_actions()
         else:
-            self.status_text.value = "You are using the latest version."
+            tittle_bar.remove_custom_actions()
         self.check_for_updates_button.disabled = False
         self.check_for_updates_button.content = None
         self.ready = True
