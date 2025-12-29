@@ -127,12 +127,12 @@ class LauncherProfilesView():
         )
 
         
-        # ---- View ----
+        # -------- VIEW --------
 
 
         self.view = ft.View(
-            "/launcher-profiles",
-            [],
+            route="/launcher-profiles",
+            controls=[],
             padding=ft.padding.only(left=50, right=50, top=20, bottom=20),
             spacing=20,
             vertical_alignment=ft.MainAxisAlignment.START,
@@ -374,7 +374,6 @@ class LauncherProfilesView():
     
 
     def remove_launcher_profile(self, edit_profile: mll.types.VanillaLauncherProfile, launcher_option: LauncherProfileOption):
-        # Working on the next update
         pass
 
 
@@ -399,8 +398,7 @@ class LauncherProfilesView():
                 {"name": "", "versionType": "latest-snapshot"}
             ]
             # Create launcher_profiles.json file if it doesn't exist
-            with open(os.path.join(app_settings.return_mc_directory(), "launcher_profiles.json"), "w", encoding="utf-8") as f:
-                json.dump({"profiles": {}}, f, ensure_ascii=False, indent=4)
+            mll.vanilla_launcher.create_empty_vanilla_launcher_profiles_file(minecraft_directory=app_settings.return_mc_directory())
 
             # Add default profiles
             for profile in default_profiles:

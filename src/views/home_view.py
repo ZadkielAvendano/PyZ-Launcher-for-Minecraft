@@ -6,7 +6,7 @@ import flet as ft
 from modules.app_config import *
 from modules.launcher import *
 from modules.refresh_handler import *
-from modules.utils import system_ram, open_file
+from modules.utils import has_update, system_ram, open_file
 from widgets.app import WindowTittleBar
 from widgets.RotatingText import HighlightRotatingText
 import minecraft_launcher_lib as mll
@@ -22,6 +22,7 @@ import os
 class HomeView():
     def __init__(self, page: ft.Page, launcher_profiles_view):
         self.page = page
+        self.ready = False
 
         self.installed_options: list[ft.DropdownOption] = []
         self.versions_options: list[ft.DropdownOption] = []
@@ -164,17 +165,21 @@ class HomeView():
             content=ft.Tabs(
                 selected_index=0,
                 animation_duration=300,
-                height=320,
+                height=360,
                 width=400,
                 expand=True,
+                animate_size=ft.Animation(duration=300, curve=ft.AnimationCurve.EASE_OUT),
+                on_change=self.refresh_settings_tab_window,
                 tabs=[
                     ft.Tab(
                         text="Game",
                         content=ft.Column(
-                            expand=False,
+                            expand=True,
+                            scroll=ft.ScrollMode.ADAPTIVE,
                             horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
                             controls=[
-                                ft.Container(height=10),
+                                ft.Container(height=5),
+                                ft.Text("Minecraft Directory:", size=15, weight=ft.FontWeight.BOLD),
                                 self.minecraft_directory_input,
                                 ft.Text("Java executable:", size=15, weight=ft.FontWeight.BOLD),
                                 self.java_directory_input,
@@ -192,10 +197,17 @@ class HomeView():
                             horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
                             controls=[
                                 ft.Container(height=10),
+                                ft.FilledButton(
+                                    text="Check for updates",
+                                    on_click=lambda e: self.page.open(self.updater_window),
+                                    width=300,
+                                    height=50,
+                                    style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5)),
+                                    tooltip="Check for updates"
+                                ),
                                 ft.Text(f"App Name: {app_name}", size=15),
                                 ft.Text(f"App Version: {app_version}", size=15),
-                                ft.Text("Development" if dev_mode else "Production", size=15),
-                                # Add advanced settings here
+                                ft.Text("Environment: " + ("Development" if dev_mode else "Production"), size=15),
                             ]
                         )
                     )
@@ -204,7 +216,7 @@ class HomeView():
             actions=[
                 ft.TextButton("Apply settings", on_click=self.set_settings),
                 ft.TextButton("Close", on_click=self.close_settings_window)
-                ],
+            ],
             on_dismiss=self.close_settings_window
         )
 
@@ -222,7 +234,7 @@ class HomeView():
             actions=[
                 ft.TextButton("Apply", on_click=self.set_username),
                 ft.TextButton("Close", on_click=self.close_username_window)
-                ],
+            ],
             on_dismiss=self.close_username_window
         )
 
@@ -241,16 +253,34 @@ class HomeView():
                     ft.TextButton("Repair version", visible=True, on_click=self.repair_version),
                     ft.TextButton("View logs", on_click=lambda e: open_file(f"logs/launcher-{datetime.date.today()}.log")),
                     ft.TextButton("Close", on_click=lambda e: self.page.close(self.error_game_window))
+                ]
+            )
+        
+        self.updater_window = ft.AlertDialog(
+                modal=True,
+                title="Update Available",
+                bgcolor="#3C3C3C",
+                scrollable=True,
+                content=ft.Column(
+                    expand=False,
+                    controls=[
+                        ft.Text(value="Update available: -- Version --")
                     ]
+                ),
+                actions=[
+                    ft.FilledButton("Download Update", style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5)),
+                              on_click=lambda e: self.page.close(self.updater_window)),
+                    ft.TextButton("Close", on_click=lambda e: self.page.close(self.updater_window))
+                ]
             )
 
 
-        # ---- View ----
+        # -------- VIEW --------
 
 
         self.view = ft.View(
-            "/",
-            [
+            route="/",
+            controls=[
                 ft.Text(app_name.upper(), size=30, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
                 HighlightRotatingText(
                     static_text="for Minecraft",
@@ -325,6 +355,7 @@ class HomeView():
         self.java_directory_input.error_text = None
         self.settings_window.content.selected_index = 0
         self.page.close(self.settings_window)
+        self.refresh_settings_tab_window()
         self.refresh_ram_slider()
 
 
@@ -380,6 +411,9 @@ class HomeView():
         self.maximum_ram_slider.value = int(re.search(r"\d+", jvm_args[0]).group())
         self.refresh_ram_slider()
 
+        if self.ready == False:
+            self.check_for_updates()
+
 
     def refresh_ram_slider(self, e: ft.Control = None):
         total_ram = system_ram()["total"]
@@ -394,7 +428,16 @@ class HomeView():
         else:
             self.maximum_ram_slider.active_color = ft.Colors.PRIMARY
         self.page.update()
-    
+
+
+    def refresh_settings_tab_window(self, e: ft.Control = None):
+        selected_index = self.settings_window.content.selected_index
+        if selected_index == 0:
+            self.settings_window.content.height = 360
+        elif selected_index == 1:
+            self.settings_window.content.height = 250
+        self.page.update()
+
 
     def refresh_play_button(self, e: ft.Control = None):
         if mll.utils.is_minecraft_installed(app_settings.return_mc_directory()):
@@ -506,3 +549,14 @@ class HomeView():
             app_settings.save_settings(AppData.LAST_PLAYED, selected_version) if save_version else None
         
         return selected_version
+    
+
+    def check_for_updates(self, e: ft.Control = None):
+        has_update_result = has_update()
+        if has_update_result[0]:
+            self.page.open(self.updater_window)
+            self.updater_window.content.controls = [ft.Text(value=f"Update available: {has_update_result[1]}")]
+        else:
+            self.status_text.value = "You are using the latest version."
+        self.ready = True
+        self.page.update()

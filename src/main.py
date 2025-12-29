@@ -20,7 +20,7 @@ theme = ft.Theme(
     filled_button_theme=ft.FilledButtonTheme(
         bgcolor=ft.Colors.GREEN_ACCENT_700,
         foreground_color=ft.Colors.WHITE,
-        disabled_bgcolor=ft.Colors.GREY_700
+        disabled_bgcolor=ft.Colors.GREY_700,
         ),
     appbar_theme=ft.AppBarTheme(surface_tint_color=ft.Colors.SURFACE)
 )

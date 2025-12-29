@@ -11,10 +11,11 @@ import pathlib
 import platform
 
 app_name = "PyZ Launcher"
-app_version = "0.5.0dev1" # Enter 'dev' in the name to test
+app_version = "v0.5.0-alpha_dev1" # Enter 'dev' in the name to test
 dev_mode = True if "dev" in app_version else False
 
 SETTINGS_KEY = "pyz.minecraftlauncher.settings"
+LAUNCHER_REPOSITORY_API = "https://api.github.com/repos/ZadkielAvendano/PyZ-Launcher-for-Minecraft"
 
 default_data = {
     "username": f"Player{random.randrange(100, 1000)}",

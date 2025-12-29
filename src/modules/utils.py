@@ -1,9 +1,30 @@
+from modules.app_config import LAUNCHER_REPOSITORY_API, app_version
+
 import os
 import subprocess
 import platform
 import psutil
+import requests
+
+def has_update() -> bool | str:
+    try:
+        response = requests.get(f"{LAUNCHER_REPOSITORY_API}/releases/latest")
+        if response.status_code == 200:
+            data: dict = response.json()
+            latest_version = data.get("tag_name", app_version)
+            print(f"Latest version: {latest_version}, Current version: {app_version}")
+            return latest_version != app_version, app_version if latest_version == app_version else latest_version
+        else:
+            print(f"Failed to fetch update info: {response.status_code}")
+            return False, app_version
+    except Exception as e:
+        print(f"Error checking for updates: {e}")
+        return False, app_version
 
 def system_ram():
+    '''
+    Returns system RAM information.
+    '''
     return {
         "total": psutil.virtual_memory().total // (1024**3),  # Total RAM in GB
         "available": psutil.virtual_memory().available // (1024**3),  # Available RAM in GB
@@ -12,13 +33,10 @@ def system_ram():
         "free": psutil.virtual_memory().free // (1024**3)  # Free RAM in GB
     }
 
-print(f"System RAM: {system_ram()['total']} GB")
-print(f"Available RAM: {system_ram()['available']} GB")
-print(f"Percentage RAM: {system_ram()['percent']} %")
-print(f"Used RAM: {system_ram()['used']} GB")
-print(f"Free RAM: {system_ram()['free']} GB")
-
 def open_file(file):
+    '''
+    Opens a file with the default application based on the operating system.
+    '''
     try:
         file = os.path.abspath(file)
         if not os.path.exists(file):
