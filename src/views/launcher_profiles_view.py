@@ -43,6 +43,7 @@ class LauncherProfilesView():
                 ft.DropdownOption("custom", "Custom", visible=False)
                 ],
             width=300,
+            expand=True,
             bgcolor="#3C3C3C",
             border_color=ft.Colors.WHITE24,
             color=ft.Colors.WHITE,
@@ -60,6 +61,7 @@ class LauncherProfilesView():
                 ft.DropdownOption("old_alpha", "Alpha")
                 ],
             width=300,
+            expand=True,
             bgcolor="#3C3C3C",
             border_color=ft.Colors.WHITE24,
             color=ft.Colors.WHITE,
@@ -71,6 +73,7 @@ class LauncherProfilesView():
             hint_text="Select a version",
             options=[],
             width=300,
+            expand=True,
             bgcolor="#3C3C3C",
             border_color=ft.Colors.WHITE24,
             color=ft.Colors.WHITE,
@@ -82,6 +85,7 @@ class LauncherProfilesView():
             hint_text="Select a version",
             options=self.versions_options,
             width=300,
+            expand=True,
             bgcolor="#3C3C3C",
             border_color=ft.Colors.WHITE24,
             color=ft.Colors.WHITE,
@@ -113,6 +117,7 @@ class LauncherProfilesView():
             scrollable=True,
             content=ft.Column(
                 expand=False,
+                horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
                 controls=[
                     self.profile_name_input,
                     self.version_type_dropdown,
@@ -338,6 +343,19 @@ class LauncherProfilesView():
 
 
 
+    def play_launcher_profile(self, launcher_profile: mll.types.VanillaLauncherProfile):
+        """
+        Initiates the game launch process using the specified launcher profile.
+        """
+        time.sleep(0.4)  # Small delay to ensure UI responsiveness
+        app_settings.save_settings(AppData.LAST_PLAYED,
+                    launcher_profile["versionType"] if launcher_profile["versionType"] in {"latest-release", "latest-snapshot"} else launcher_profile["version"])
+        self.page.go("/")
+        refresh()
+        app_settings.views["home_view"].ui_launch_game()
+
+
+
     def set_launcher_profile(self, edit_profile: mll.types.VanillaLauncherProfile = None):
         """
         Sets or updates a Minecraft launcher profile.
@@ -388,7 +406,8 @@ class LauncherProfilesView():
         if mll.vanilla_launcher.do_vanilla_launcher_profiles_exists(app_settings.return_mc_directory()):
             self.view.controls = []
             for profile in mll.vanilla_launcher.load_vanilla_launcher_profiles(app_settings.return_mc_directory()):
-                self.view.controls.append(LauncherProfileOption(launcher_profile=profile, on_edit=lambda p: self.edit_launcher_profile(edit_profile=p),
+                self.view.controls.append(LauncherProfileOption(launcher_profile=profile, on_play=lambda p: self.play_launcher_profile(launcher_profile=p),
+                                                                on_edit=lambda p: self.edit_launcher_profile(edit_profile=p),
                                                                 on_remove=lambda p, o: self.remove_launcher_profile(edit_profile=p, launcher_option=o)))
             self.view.controls.append(self.new_launcher_profile_button)
         else:

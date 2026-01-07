@@ -1,6 +1,7 @@
 from modules.app_config import LAUNCHER_REPOSITORY_API, app_version
 
 import os
+import sys
 import subprocess
 import platform
 import psutil
@@ -32,6 +33,14 @@ def system_ram():
         "used": psutil.virtual_memory().used // (1024**3),  # Used RAM in GB
         "free": psutil.virtual_memory().free // (1024**3)  # Free RAM in GB
     }
+
+def get_app_path():
+    # Si la app está congelada (empaquetada como ejecutable)
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+    # Si se ejecuta como script normal .py
+    else:
+        return os.path.dirname(os.path.abspath(__file__))
 
 def open_file(file):
     '''

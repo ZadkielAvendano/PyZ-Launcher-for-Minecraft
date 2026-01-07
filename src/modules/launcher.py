@@ -10,7 +10,6 @@ import subprocess
 import logging
 import datetime
 import time
-import re
 
 # Create a directory for logs if it doesn't exist
 if not os.path.exists("logs"):
@@ -178,6 +177,20 @@ def install_version(page: ft.Page, version_id: str, buttons_to_disable: list, pr
         __set_controls_enabled_safe(page, buttons_to_disable, True)
         refresh()
 
+
+
+def is_version_installed(version_id: str) -> bool:
+    """Checks if the specified Minecraft version is installed."""
+    if version_id == "latest-release":
+        version_id = mll.utils.get_latest_version()["release"]
+    elif version_id == "latest-snapshot":
+        version_id = mll.utils.get_latest_version()["snapshot"]
+    installed_list_id = [v["id"] for v in get_versions()["installed"]]
+    if not mll.utils.is_minecraft_installed(app_settings.return_mc_directory()) or version_id not in installed_list_id:
+        return False
+    else:
+        return True
+    
 
 
 def check_version(version: str) -> tuple:

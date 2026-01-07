@@ -7,10 +7,17 @@ from modules.app_config import *
 from modules.refresh_handler import *
 from widgets.app import WindowTittleBar
 
+fonts = {
+    "Poppins-Light": "/fonts/Poppins-Light.ttf",
+    "Poppins-Medium": "/fonts/Poppins-Medium.ttf",
+    "Poppins-Regular": "/fonts/Poppins-Regular.ttf"
+}
+
 theme_transition = ft.PageTransitionTheme.ZOOM
 
 theme = ft.Theme(
     color_scheme_seed=ft.Colors.GREEN,
+    font_family="Poppins-Regular",
     page_transitions=ft.PageTransitionsTheme(
         windows=theme_transition,
         macos=theme_transition,
@@ -45,6 +52,7 @@ def main(page: ft.Page):
     page.window.title_bar_buttons_hidden = True
     page.window.center()
     page.theme = theme
+    page.fonts = fonts
     page.theme_mode = ft.ThemeMode.DARK
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
@@ -77,6 +85,10 @@ def main(page: ft.Page):
     # Configure refresh states
     refresh_list.append(home_view.refresh_ui)
     refresh_list.append(launcher_profiles_view.refresh_ui)
+
+    # Store views in app settings
+    app_settings.views["home_view"] = home_view
+    app_settings.views["launcher_profiles_view"] = launcher_profiles_view
 
     def route_change(e):
         page.views.clear()

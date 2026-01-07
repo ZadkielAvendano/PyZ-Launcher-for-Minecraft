@@ -6,7 +6,7 @@ import flet as ft
 from modules.app_config import *
 from modules.launcher import *
 from modules.refresh_handler import *
-from modules.utils import has_update, system_ram, open_file
+from modules.utils import has_update, system_ram, open_file, get_app_path
 from widgets.app import WindowTittleBar
 from widgets.RotatingText import HighlightRotatingText
 import minecraft_launcher_lib as mll
@@ -20,7 +20,7 @@ import os
 
 
 class HomeView():
-    def __init__(self, page: ft.Page, launcher_profiles_view):
+    def __init__(self, page: ft.Page, launcher_profiles_view: ft.View):
         self.page = page
         self.ready = False
 
@@ -211,15 +211,17 @@ class HomeView():
                         text="Launcher",
                         content=ft.Column(
                             expand=False,
+                            scroll=ft.ScrollMode.ADAPTIVE,
                             horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
                             controls=[
                                 ft.Container(height=10),
                                 self.check_for_updates_button,
                                 self.check_on_startup,
                                 ft.Divider(),
-                                ft.Text(f"App Name: {app_name}", size=15),
-                                ft.Text(f"App Version: {app_version}", size=15),
-                                ft.Text("Environment: " + ("Development" if dev_mode else "Production"), size=15),
+                                ft.Text(f"App Name: {app_name}", size=12),
+                                ft.Text(f"App Version: {app_version}", size=12),
+                                ft.Text("Environment: " + ("Development" if dev_mode else "Production"), size=12),
+                                ft.Text(f"App Path: {get_app_path()}", size=12, italic=True, color=ft.Colors.GREY_500),
                             ]
                         )
                     )
@@ -431,7 +433,7 @@ class HomeView():
         self.refresh_ram_slider()
 
         if self.ready == False:
-            self.check_for_updates(on_startup=app_settings.get_setting(AppData.CHECK_UPDATES_ON_STARTUP))
+            self.check_for_updates(open_dialog_window=False, on_startup=app_settings.get_setting(AppData.CHECK_UPDATES_ON_STARTUP))
 
 
     def refresh_ram_slider(self, e: ft.Control = None):
@@ -454,7 +456,7 @@ class HomeView():
         if selected_index == 0:
             self.settings_window.content.height = 360
         elif selected_index == 1:
-            self.settings_window.content.height = 290
+            self.settings_window.content.height = 320
         self.page.update()
 
 
@@ -511,9 +513,7 @@ class HomeView():
     
     def ui_launch_game(self, e: ft.Control = None):
         selected_version = self.return_current_version(save_version=True)
-        installed_list_id = [v["id"] for v in get_versions()["installed"]]
-
-        if selected_version not in installed_list_id:
+        if not is_version_installed(selected_version):
             self.ui_install_game(None, selected_version)
             return
         
@@ -548,6 +548,7 @@ class HomeView():
         if mll.utils.is_vanilla_version(selected_version):
             self.ui_install_game(e, selected_version)
         self.page.close(self.error_game_window)
+        # pending: add modded version repair
 
 
     def return_current_version(self, save_version: bool = False) -> str:

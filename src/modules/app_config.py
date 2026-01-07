@@ -52,9 +52,10 @@ class Settings():
     """
     Manages application settings, including loading, saving, and retrieving stored configurations.
     """
-    def __init__(self, page: ft.Page = None, settings: dict = None):
+    def __init__(self, page: ft.Page = None, settings: dict = None, views: dict = None):
         self.page = page
         self.settings = settings
+        self.views: dict = views if views else {}
 
     def load_settings(self):
         """
