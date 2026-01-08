@@ -1,6 +1,6 @@
 [project]
 name = "PyZ-Launcher"
-version = "0.2.0"
+version = "v0.5.0-alpha"
 description = ""
 readme = "README.md"
 requires-python = ">=3.9"
@@ -26,7 +26,7 @@ product = "PyZ Launcher"
 company = "PyZ Launcher"
 
 # copyright text to display in about app dialogs
-copyright = "Copyright (C) 2025 by Zadkiel Avendano"
+copyright = "Copyright (C) 2026 by Zadkiel Avendano"
 
 [tool.flet.app]
 path = "src"
@@ -35,6 +35,10 @@ path = "src"
 show = true
 message = "Initializing Launcher..."
 
+[tool.flet.app.startup_screen]
+show = true
+message = "Initializing PyZ Launcher for Minecraft..."
+
 [tool.flet.compile]
 app = true # --compile-app
 packages = true # --compile-packages
@@ -42,12 +46,13 @@ cleanup = true # --cleanup-on-compile
 
 [tool.uv]
 dev-dependencies = [
-    "flet[all]==0.28.2",
-    "minecraft-launcher-lib==7.1"
+    "flet[all]==0.28.3",
+    "minecraft-launcher-lib==8.0",
+    "psutil==7.2.0"
 ]
 
 [tool.poetry]
 package-mode = false
 
 [tool.poetry.group.dev.dependencies]
-flet = {extras = ["all"], version = "0.28.2"}
+flet = {extras = ["all"], version = "0.28.3"}

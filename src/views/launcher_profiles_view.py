@@ -1,5 +1,5 @@
 # This file is part of PYZ-LAUNCHER-FOR-MINECRAFT (https://github.com/ZadkielAvendano/PyZ-Launcher-for-Minecraft)
-# Copyright (c) 2025 Zadkiel Avendano and collaborators
+# Copyright (c) 2026 Zadkiel Avendano and collaborators
 # License-Identifier: MIT License
 
 import flet as ft
@@ -8,9 +8,6 @@ from modules.launcher import *
 from widgets.ui import *
 from widgets.app import WindowTittleBar
 import minecraft_launcher_lib as mll
-import json
-import os
-import re
 
 
 ## ----- FLET UI -----

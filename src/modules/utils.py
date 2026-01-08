@@ -1,26 +1,12 @@
-from modules.app_config import LAUNCHER_REPOSITORY_API, app_version
+# This file is part of PYZ-LAUNCHER-FOR-MINECRAFT (https://github.com/ZadkielAvendano/PyZ-Launcher-for-Minecraft)
+# Copyright (c) 2026 Zadkiel Avendano and collaborators
+# License-Identifier: MIT License
 
-import os
-import sys
 import subprocess
 import platform
 import psutil
-import requests
-
-def has_update() -> bool | str:
-    try:
-        response = requests.get(f"{LAUNCHER_REPOSITORY_API}/releases/latest")
-        if response.status_code == 200:
-            data: dict = response.json()
-            latest_version = data.get("tag_name", app_version)
-            print(f"Latest version: {latest_version}, Current version: {app_version}")
-            return latest_version != app_version, app_version if latest_version == app_version else latest_version
-        else:
-            print(f"Failed to fetch update info: {response.status_code}")
-            return False, app_version
-    except Exception as e:
-        print(f"Error checking for updates: {e}")
-        return False, app_version
+import sys
+import os
 
 def system_ram():
     '''
@@ -35,12 +21,11 @@ def system_ram():
     }
 
 def get_app_path():
-    # Si la app está congelada (empaquetada como ejecutable)
-    if getattr(sys, 'frozen', False):
+    try:
         return os.path.dirname(sys.executable)
-    # Si se ejecuta como script normal .py
-    else:
-        return os.path.dirname(os.path.abspath(__file__))
+    except Exception as e:
+        print(f"Error getting app path: {e}")
+        return None
 
 def open_file(file):
     '''

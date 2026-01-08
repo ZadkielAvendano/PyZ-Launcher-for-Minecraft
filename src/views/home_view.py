@@ -1,12 +1,13 @@
 # This file is part of PYZ-LAUNCHER-FOR-MINECRAFT (https://github.com/ZadkielAvendano/PyZ-Launcher-for-Minecraft)
-# Copyright (c) 2025 Zadkiel Avendano and collaborators
+# Copyright (c) 2026 Zadkiel Avendano and collaborators
 # License-Identifier: MIT License
 
 import flet as ft
 from modules.app_config import *
 from modules.launcher import *
 from modules.refresh_handler import *
-from modules.utils import has_update, system_ram, open_file, get_app_path
+from modules.utils import system_ram, open_file, get_app_path
+from modules.updater import has_update
 from widgets.app import WindowTittleBar
 from widgets.RotatingText import HighlightRotatingText
 import minecraft_launcher_lib as mll
@@ -221,7 +222,7 @@ class HomeView():
                                 ft.Text(f"App Name: {app_name}", size=12),
                                 ft.Text(f"App Version: {app_version}", size=12),
                                 ft.Text("Environment: " + ("Development" if dev_mode else "Production"), size=12),
-                                ft.Text(f"App Path: {get_app_path()}", size=12, italic=True, color=ft.Colors.GREY_500),
+                                ft.Text(f"App Path: {get_app_path()}", selectable=True, size=12, italic=True, color=ft.Colors.GREY_500),
                             ]
                         )
                     )

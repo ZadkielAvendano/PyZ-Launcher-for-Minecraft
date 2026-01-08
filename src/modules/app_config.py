@@ -1,5 +1,5 @@
 # This file is part of PYZ-LAUNCHER-FOR-MINECRAFT (https://github.com/ZadkielAvendano/PyZ-Launcher-for-Minecraft)
-# Copyright (c) 2025 Zadkiel Avendano and collaborators
+# Copyright (c) 2026 Zadkiel Avendano and collaborators
 # License-Identifier: MIT License
 
 import flet as ft
@@ -11,7 +11,7 @@ import pathlib
 import platform
 
 app_name = "PyZ Launcher"
-app_version = "v0.5.0-alpha_dev1" # Enter 'dev' in the name to test
+app_version = "v0.5.0-alpha" # Enter 'dev' in the name to test
 dev_mode = True if "dev" in app_version else False
 
 SETTINGS_KEY = "pyz.minecraftlauncher.settings"

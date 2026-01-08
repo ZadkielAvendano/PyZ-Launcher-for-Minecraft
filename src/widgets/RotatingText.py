@@ -1,3 +1,5 @@
+# This file is part of FLET WIDGETS LIBRARY (https://github.com/MasterA5/Flet-Widgets-Library)
+
 from flet import (
     MainAxisAlignment,
     AnimationCurve,
