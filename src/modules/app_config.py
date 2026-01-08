@@ -15,6 +15,7 @@ app_version = "v0.5.0-alpha" # Enter 'dev' in the name to test
 dev_mode = True if "dev" in app_version else False
 
 SETTINGS_KEY = "pyz.minecraftlauncher.settings"
+LAUNCHER_REPOSITORY = "https://github.com/ZadkielAvendano/PyZ-Launcher-for-Minecraft"
 LAUNCHER_REPOSITORY_API = "https://api.github.com/repos/ZadkielAvendano/PyZ-Launcher-for-Minecraft"
 
 default_data = {

@@ -7,7 +7,7 @@ from modules.app_config import *
 from modules.launcher import *
 from modules.refresh_handler import *
 from modules.utils import system_ram, open_file, get_app_path
-from modules.updater import has_update
+from modules.updater import has_update, download_launcher_update
 from widgets.app import WindowTittleBar
 from widgets.RotatingText import HighlightRotatingText
 import minecraft_launcher_lib as mll
@@ -108,6 +108,14 @@ class HomeView():
             height=50,
             style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5)),
             tooltip="Check for updates",
+        )
+
+        self.update_launcher_button = ft.FilledButton(
+            text="Download Update",
+            width=300,
+            height=50,
+            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5)),
+            on_click=self.ui_update_launcher,
         )
 
         self.versions_button = ft.IconButton(
@@ -279,13 +287,7 @@ class HomeView():
                 content=ft.Column(
                     expand=False,
                     controls=[
-                        ft.FilledButton(
-                            text="Download Update",
-                            width=300,
-                            height=50,
-                            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5)),
-                            on_click=lambda e: self.page.close(self.updater_window),
-                        ),
+                        self.update_launcher_button,
                         ft.Text(value="Update available: -- Version --"),
                         ft.Divider(),
                         self.check_on_startup
@@ -385,11 +387,14 @@ class HomeView():
     def refresh_ui(self, e: ft.Control = None):
         versions = get_versions()
         last_played = app_settings.get_setting(AppData.LAST_PLAYED)
+        launcher_profiles_exists = mll.vanilla_launcher.do_vanilla_launcher_profiles_exists(app_settings.return_mc_directory())
+        if launcher_profiles_exists:
+            launcher_profiles = mll.vanilla_launcher.load_vanilla_launcher_profiles(app_settings.return_mc_directory())
 
         # Retrieve installed and available versions
-        if mll.vanilla_launcher.do_vanilla_launcher_profiles_exists(app_settings.return_mc_directory()):
+        if launcher_profiles_exists:
             self.installed_options = []
-            for profile in mll.vanilla_launcher.load_vanilla_launcher_profiles(app_settings.return_mc_directory()):
+            for profile in launcher_profiles:
                 version_type = profile["versionType"]
                 if version_type in {"latest-release", "latest-snapshot"}:
                     self.installed_options.append(ft.DropdownOption(key=version_type, text=version_type.replace("-", " ").capitalize(), data=profile))
@@ -401,11 +406,17 @@ class HomeView():
 
             if last_played and last_played in {"latest-release", "latest-snapshot"}:
                 self.installed_dropdown.value = last_played
-            elif last_played and mll.vanilla_launcher.do_vanilla_launcher_profiles_exists(app_settings.return_mc_directory()):
-                for profile in mll.vanilla_launcher.load_vanilla_launcher_profiles(app_settings.return_mc_directory()):
+            elif last_played and launcher_profiles_exists:
+                count = len(launcher_profiles)
+                for profile in launcher_profiles:
+                    count -= 1
                     if profile["version"] == last_played:
                         self.installed_dropdown.value = last_played
                         break
+                    elif count <= 0:
+                        self.installed_dropdown.value = "latest-release"
+                        if last_played:
+                            app_settings.save_settings(AppData.LAST_PLAYED, "latest-release")
             else:
                 self.installed_dropdown.value = "latest-release"
                 if last_played:
@@ -529,7 +540,9 @@ class HomeView():
         if not selected_version:
             self.status_text.value = "Please select a version."
             return
+        self.progress_window.title = "Installing Version: " + selected_version
         self.page.open(self.progress_window)
+        self.page.update()
         buttons_to_disable = [self.play_button, self.installed_dropdown, self.versions_button, self.settings_button, self.username_button]
         thread = threading.Thread(target=install_version, args=(self.page, selected_version, buttons_to_disable, self.progress_window, self.progress_bar,
                                                                 self.status_text, self.progress_text))
@@ -549,7 +562,9 @@ class HomeView():
         if mll.utils.is_vanilla_version(selected_version):
             self.ui_install_game(e, selected_version)
         self.page.close(self.error_game_window)
-        # pending: add modded version repair
+        
+        
+        # --- pending: add modded version repair ---
 
 
     def return_current_version(self, save_version: bool = False) -> str:
@@ -570,6 +585,26 @@ class HomeView():
             app_settings.save_settings(AppData.LAST_PLAYED, selected_version) if save_version else None
         
         return selected_version
+    
+
+    def ui_update_launcher(self, e: ft.Control = None):
+        self.update_launcher_button.disabled = True
+        self.page.update()
+        latest_version = has_update()[1]
+        self.update_launcher_button.disabled = False
+        self.page.update()
+        self.page.close(self.updater_window)
+        if not has_update()[0] or not latest_version:
+            self.status_text.value = "No updates available."
+            self.page.update()
+            return
+        self.progress_window.title = "Updating to Version: " + latest_version
+        self.page.open(self.progress_window)
+        self.page.update()
+        buttons_to_disable = [self.play_button, self.installed_dropdown, self.versions_button, self.settings_button, self.username_button]
+        thread = threading.Thread(target=download_launcher_update, args=(latest_version, self.page, self.status_text, self.progress_bar, self.progress_text, buttons_to_disable, self.progress_window))
+        thread.daemon = True
+        thread.start()
     
 
     def check_for_updates(self, e: ft.Control = None, open_dialog_window: bool = True, on_startup: bool = False):

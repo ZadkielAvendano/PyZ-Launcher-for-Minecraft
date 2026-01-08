@@ -187,6 +187,7 @@ class LauncherProfilesView():
         """
         self.version_dropdown.disabled = True
         self.loader_version_dropdown.disabled = True
+        self.confirm_button.disabled = True
         self.page.update()
 
         if self.version_type_dropdown.value == "vanilla":
@@ -228,6 +229,7 @@ class LauncherProfilesView():
         finally:
             self.version_dropdown.disabled = False
             self.loader_version_dropdown.disabled = False
+            self.confirm_button.disabled = False
             self.page.update()
 
 
