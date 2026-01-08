@@ -1,5 +1,5 @@
 # This file is part of PYZ-LAUNCHER-FOR-MINECRAFT (https://github.com/ZadkielAvendano/PyZ-Launcher-for-Minecraft)
-# Copyright (c) 2025 Zadkiel Avendano and collaborators
+# Copyright (c) 2026 Zadkiel Avendano and collaborators
 # License-Identifier: MIT License
 
 import flet as ft
@@ -11,10 +11,12 @@ import pathlib
 import platform
 
 app_name = "PyZ Launcher"
-app_version = "0.4.0" # Enter 'dev' in the name to test
+app_version = "v0.5.0-alpha" # Enter 'dev' in the name to test
 dev_mode = True if "dev" in app_version else False
 
 SETTINGS_KEY = "pyz.minecraftlauncher.settings"
+LAUNCHER_REPOSITORY = "https://github.com/ZadkielAvendano/PyZ-Launcher-for-Minecraft"
+LAUNCHER_REPOSITORY_API = "https://api.github.com/repos/ZadkielAvendano/PyZ-Launcher-for-Minecraft"
 
 default_data = {
     "username": f"Player{random.randrange(100, 1000)}",
@@ -23,7 +25,8 @@ default_data = {
     "lastPlayed": "", # ID of the last version of Minecraft played
     "minecraftDirectory": "", # Empty for the default Minecraft directory
     "executablePath": "", # Empty for the default Java directory
-    "jvmArguments": ["-Xmx2G", "-Xms2G"] # JVM Arguments
+    "jvmArguments": ["-Xmx2G", "-Xms2G"], # JVM Arguments
+    "checkUpdatesOnStartup": True
     }
 
 try:
@@ -43,15 +46,17 @@ class AppData(Enum):
     MC_DIRECTORY = "minecraftDirectory"
     EXECUTABLE_PATH = "executablePath"
     JVM_ARGUMENTS = "jvmArguments"
+    CHECK_UPDATES_ON_STARTUP = "checkUpdatesOnStartup"
 
 
 class Settings():
     """
     Manages application settings, including loading, saving, and retrieving stored configurations.
     """
-    def __init__(self, page: ft.Page = None, settings: dict = None):
+    def __init__(self, page: ft.Page = None, settings: dict = None, views: dict = None):
         self.page = page
         self.settings = settings
+        self.views: dict = views if views else {}
 
     def load_settings(self):
         """

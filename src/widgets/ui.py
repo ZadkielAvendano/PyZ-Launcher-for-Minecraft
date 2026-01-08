@@ -1,13 +1,14 @@
 # This file is part of PYZ-LAUNCHER-FOR-MINECRAFT (https://github.com/ZadkielAvendano/PyZ-Launcher-for-Minecraft)
-# Copyright (c) 2025 Zadkiel Avendano and collaborators
+# Copyright (c) 2026 Zadkiel Avendano and collaborators
 # License-Identifier: MIT License
 
 import flet as ft
-import minecraft_launcher_lib as mll
+from minecraft_launcher_lib.types import VanillaLauncherProfile
+from modules.launcher import is_version_installed
 
 
 class LauncherProfileOption(ft.ListTile):
-    def __init__(self, launcher_profile: mll.types.VanillaLauncherProfile, on_edit=None, on_remove=None):
+    def __init__(self, launcher_profile: VanillaLauncherProfile, on_play=None, on_edit=None, on_remove=None):
         super().__init__()
         self.launcher_profile = launcher_profile
         self.title=ft.Text(
@@ -28,6 +29,7 @@ class LauncherProfileOption(ft.ListTile):
             icon=ft.Icons.MORE_VERT,
             bgcolor=ft.Colors.GREY_800,
             items=[
+                ft.PopupMenuItem(content=self.get_play_text(), on_click=lambda e: on_play(self.launcher_profile)), # Play profile
                 ft.PopupMenuItem(text="View", on_click=lambda e: on_edit(self.launcher_profile)), # Edit profile feature is planned for the next version.
                 #ft.PopupMenuItem(text="Remove", on_click=lambda e: on_remove(self.launcher_profile, self)), # Working on the next update
             ],
@@ -35,7 +37,15 @@ class LauncherProfileOption(ft.ListTile):
         self.on_click=lambda e: on_edit(self.launcher_profile)
 
         if self.launcher_profile.get("versionType") != "custom":
-            if len(self.trailing.items) > 1:
+            if len(self.trailing.items) > 2:
                 self.trailing.items.pop()
 
-        # menu = ft.Row(alignment=ft.MainAxisAlignment.END, vertical_alignment=ft.CrossAxisAlignment.CENTER, width=100, controls=[ft.IconButton(icon=ft.Icons.DELETE, icon_color=ft.Colors.ERROR), ft.IconButton(icon=ft.Icons.EDIT)])
+    def get_play_text(self) -> ft.Text:
+        if self.launcher_profile.get("versionType") != "custom":
+            version_id = self.launcher_profile.get("versionType")
+        else:
+            version_id = self.launcher_profile.get("version")
+        value = is_version_installed(version_id)
+        return ft.Text("Play" if value else "Install", color=ft.Colors.GREEN_ACCENT_700 if value else ft.Colors.YELLOW_700, weight=ft.FontWeight.BOLD)
+
+    # menu = ft.Row(alignment=ft.MainAxisAlignment.END, vertical_alignment=ft.CrossAxisAlignment.CENTER, width=100, controls=[ft.IconButton(icon=ft.Icons.DELETE, icon_color=ft.Colors.ERROR), ft.IconButton(icon=ft.Icons.EDIT)])

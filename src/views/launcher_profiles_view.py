@@ -1,5 +1,5 @@
 # This file is part of PYZ-LAUNCHER-FOR-MINECRAFT (https://github.com/ZadkielAvendano/PyZ-Launcher-for-Minecraft)
-# Copyright (c) 2025 Zadkiel Avendano and collaborators
+# Copyright (c) 2026 Zadkiel Avendano and collaborators
 # License-Identifier: MIT License
 
 import flet as ft
@@ -8,9 +8,6 @@ from modules.launcher import *
 from widgets.ui import *
 from widgets.app import WindowTittleBar
 import minecraft_launcher_lib as mll
-import json
-import os
-import re
 
 
 ## ----- FLET UI -----
@@ -43,6 +40,7 @@ class LauncherProfilesView():
                 ft.DropdownOption("custom", "Custom", visible=False)
                 ],
             width=300,
+            expand=True,
             bgcolor="#3C3C3C",
             border_color=ft.Colors.WHITE24,
             color=ft.Colors.WHITE,
@@ -60,6 +58,7 @@ class LauncherProfilesView():
                 ft.DropdownOption("old_alpha", "Alpha")
                 ],
             width=300,
+            expand=True,
             bgcolor="#3C3C3C",
             border_color=ft.Colors.WHITE24,
             color=ft.Colors.WHITE,
@@ -71,6 +70,7 @@ class LauncherProfilesView():
             hint_text="Select a version",
             options=[],
             width=300,
+            expand=True,
             bgcolor="#3C3C3C",
             border_color=ft.Colors.WHITE24,
             color=ft.Colors.WHITE,
@@ -82,6 +82,7 @@ class LauncherProfilesView():
             hint_text="Select a version",
             options=self.versions_options,
             width=300,
+            expand=True,
             bgcolor="#3C3C3C",
             border_color=ft.Colors.WHITE24,
             color=ft.Colors.WHITE,
@@ -103,16 +104,17 @@ class LauncherProfilesView():
             width=300,
             height=50,
             style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5)),
-            tooltip="Apply"
+            tooltip="Create a new launcher profile"
         )
 
         self.launcher_profiles_window = ft.AlertDialog(
-            modal=True,
+            modal=False,
             title="Minecraft Launcher Profile",
             bgcolor="#3C3C3C",
             scrollable=True,
             content=ft.Column(
                 expand=False,
+                horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
                 controls=[
                     self.profile_name_input,
                     self.version_type_dropdown,
@@ -122,16 +124,17 @@ class LauncherProfilesView():
                     self.confirm_button
                 ]
             ),
-            actions=[ft.TextButton("Close", on_click=lambda e: page.close(self.launcher_profiles_window))]
+            actions=[ft.TextButton("Close", on_click=lambda e: page.close(self.launcher_profiles_window))],
+            on_dismiss=lambda e: page.close(self.launcher_profiles_window)
         )
 
         
-        # ---- View ----
+        # -------- VIEW --------
 
 
         self.view = ft.View(
-            "/launcher-profiles",
-            [],
+            route="/launcher-profiles",
+            controls=[],
             padding=ft.padding.only(left=50, right=50, top=20, bottom=20),
             spacing=20,
             vertical_alignment=ft.MainAxisAlignment.START,
@@ -184,6 +187,7 @@ class LauncherProfilesView():
         """
         self.version_dropdown.disabled = True
         self.loader_version_dropdown.disabled = True
+        self.confirm_button.disabled = True
         self.page.update()
 
         if self.version_type_dropdown.value == "vanilla":
@@ -225,6 +229,7 @@ class LauncherProfilesView():
         finally:
             self.version_dropdown.disabled = False
             self.loader_version_dropdown.disabled = False
+            self.confirm_button.disabled = False
             self.page.update()
 
 
@@ -337,6 +342,19 @@ class LauncherProfilesView():
 
 
 
+    def play_launcher_profile(self, launcher_profile: mll.types.VanillaLauncherProfile):
+        """
+        Initiates the game launch process using the specified launcher profile.
+        """
+        time.sleep(0.4)  # Small delay to ensure UI responsiveness
+        app_settings.save_settings(AppData.LAST_PLAYED,
+                    launcher_profile["versionType"] if launcher_profile["versionType"] in {"latest-release", "latest-snapshot"} else launcher_profile["version"])
+        self.page.go("/")
+        refresh()
+        app_settings.views["home_view"].ui_launch_game()
+
+
+
     def set_launcher_profile(self, edit_profile: mll.types.VanillaLauncherProfile = None):
         """
         Sets or updates a Minecraft launcher profile.
@@ -373,7 +391,6 @@ class LauncherProfilesView():
     
 
     def remove_launcher_profile(self, edit_profile: mll.types.VanillaLauncherProfile, launcher_option: LauncherProfileOption):
-        # Working on the next update
         pass
 
 
@@ -388,7 +405,8 @@ class LauncherProfilesView():
         if mll.vanilla_launcher.do_vanilla_launcher_profiles_exists(app_settings.return_mc_directory()):
             self.view.controls = []
             for profile in mll.vanilla_launcher.load_vanilla_launcher_profiles(app_settings.return_mc_directory()):
-                self.view.controls.append(LauncherProfileOption(launcher_profile=profile, on_edit=lambda p: self.edit_launcher_profile(edit_profile=p),
+                self.view.controls.append(LauncherProfileOption(launcher_profile=profile, on_play=lambda p: self.play_launcher_profile(launcher_profile=p),
+                                                                on_edit=lambda p: self.edit_launcher_profile(edit_profile=p),
                                                                 on_remove=lambda p, o: self.remove_launcher_profile(edit_profile=p, launcher_option=o)))
             self.view.controls.append(self.new_launcher_profile_button)
         else:
@@ -398,8 +416,7 @@ class LauncherProfilesView():
                 {"name": "", "versionType": "latest-snapshot"}
             ]
             # Create launcher_profiles.json file if it doesn't exist
-            with open(os.path.join(app_settings.return_mc_directory(), "launcher_profiles.json"), "w", encoding="utf-8") as f:
-                json.dump({"profiles": {}}, f, ensure_ascii=False, indent=4)
+            mll.vanilla_launcher.create_empty_vanilla_launcher_profiles_file(minecraft_directory=app_settings.return_mc_directory())
 
             # Add default profiles
             for profile in default_profiles:

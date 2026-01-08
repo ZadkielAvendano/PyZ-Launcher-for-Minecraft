@@ -1,5 +1,5 @@
 # This file is part of PYZ-LAUNCHER-FOR-MINECRAFT (https://github.com/ZadkielAvendano/PyZ-Launcher-for-Minecraft)
-# Copyright (c) 2025 Zadkiel Avendano and collaborators
+# Copyright (c) 2026 Zadkiel Avendano and collaborators
 # License-Identifier: MIT License
 
 import flet as ft
@@ -10,7 +10,6 @@ import subprocess
 import logging
 import datetime
 import time
-import re
 
 # Create a directory for logs if it doesn't exist
 if not os.path.exists("logs"):
@@ -60,7 +59,10 @@ def launch_game(home_view, version_id: str, status_text_control: ft.Text, button
             "username": app_settings.get_setting(AppData.USERNAME),
             "uuid": app_settings.get_setting(AppData.UUID), # UUID offline
             "token": "", # offline
-            "jvmArguments": app_settings.get_setting(AppData.JVM_ARGUMENTS) # JVM
+            "jvmArguments": app_settings.get_setting(AppData.JVM_ARGUMENTS), # JVM Arguments
+            # Launcher info
+            "launcherName": app_name,
+            "launcherVersion": app_version,
         }
 
         if app_settings.get_setting(AppData.EXECUTABLE_PATH) != "":
@@ -175,6 +177,20 @@ def install_version(page: ft.Page, version_id: str, buttons_to_disable: list, pr
         __set_controls_enabled_safe(page, buttons_to_disable, True)
         refresh()
 
+
+
+def is_version_installed(version_id: str) -> bool:
+    """Checks if the specified Minecraft version is installed."""
+    if version_id == "latest-release":
+        version_id = mll.utils.get_latest_version()["release"]
+    elif version_id == "latest-snapshot":
+        version_id = mll.utils.get_latest_version()["snapshot"]
+    installed_list_id = [v["id"] for v in get_versions()["installed"]]
+    if not mll.utils.is_minecraft_installed(app_settings.return_mc_directory()) or version_id not in installed_list_id:
+        return False
+    else:
+        return True
+    
 
 
 def check_version(version: str) -> tuple:

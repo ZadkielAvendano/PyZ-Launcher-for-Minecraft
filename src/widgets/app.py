@@ -1,3 +1,7 @@
+# This file is part of PYZ-LAUNCHER-FOR-MINECRAFT (https://github.com/ZadkielAvendano/PyZ-Launcher-for-Minecraft)
+# Copyright (c) 2026 Zadkiel Avendano and collaborators
+# License-Identifier: MIT License
+
 import flet as ft
 
 class WindowTittleBar(ft.AppBar):
@@ -13,9 +17,11 @@ class WindowTittleBar(ft.AppBar):
             ft.IconButton(ft.Icons.RECTANGLE_OUTLINED, tooltip="Maximize window", on_click=lambda _: self.maximize_window()),
             ft.IconButton(ft.Icons.CLOSE, tooltip="Close launcher", on_click=lambda _: page.window.close())
         ]
-        if custom_actions:
+
+        self.custom_actions = custom_actions if custom_actions else []
+        if self.custom_actions:
             self.actions.insert(0, ft.Container(width=10))
-            for custom_action in custom_actions:
+            for custom_action in self.custom_actions:
                 self.actions.insert(0, custom_action)
 
     def maximize_window(self):
@@ -25,3 +31,18 @@ class WindowTittleBar(ft.AppBar):
     def minimize_window(self):
         self.page.window.minimized = False if self.page.window.minimized else True
         self.page.update()
+
+    def add_custom_action(self, action: ft.Control):
+        if self.custom_actions == None or len(self.custom_actions) == 0:
+            self.actions.insert(0, ft.Container(width=10))
+        self.custom_actions.append(action)
+        self.actions.insert(0, action)
+        self.page.update()
+
+    def remove_custom_actions(self):
+        if self.custom_actions and len(self.custom_actions) > 0:
+            for action in self.custom_actions:
+                self.actions.remove(action)
+            self.actions.remove(self.actions[0])
+            self.custom_actions = []
+            self.page.update()
