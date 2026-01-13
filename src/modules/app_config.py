@@ -11,7 +11,7 @@ import pathlib
 import platform
 
 app_name = "PyZ Launcher"
-app_version = "v0.5.0-alpha" # Enter 'dev' in the name to test
+app_version = "v0.5.1-alpha" # Enter 'dev' in the name to test
 dev_mode = True if "dev" in app_version else False
 
 SETTINGS_KEY = "pyz.minecraftlauncher.settings"
