@@ -402,23 +402,28 @@ class LauncherProfilesView():
         If none exist, it creates default profiles and ensures the launcher_profiles.json file is present.
         """
         # Vanilla Launcher Profiles
-        if mll.vanilla_launcher.do_vanilla_launcher_profiles_exists(app_settings.return_mc_directory()):
-            self.view.controls = []
-            for profile in mll.vanilla_launcher.load_vanilla_launcher_profiles(app_settings.return_mc_directory()):
-                self.view.controls.append(LauncherProfileOption(launcher_profile=profile, on_play=lambda p: self.play_launcher_profile(launcher_profile=p),
-                                                                on_edit=lambda p: self.edit_launcher_profile(edit_profile=p),
-                                                                on_remove=lambda p, o: self.remove_launcher_profile(edit_profile=p, launcher_option=o)))
-            self.view.controls.append(self.new_launcher_profile_button)
-        else:
-            # Add the default profiles ["latest-release", "latest-snapshot"]
-            default_profiles: list[mll.types.VanillaLauncherProfile] = [
-                {"name": "", "versionType": "latest-release"},
-                {"name": "", "versionType": "latest-snapshot"}
-            ]
-            # Create launcher_profiles.json file if it doesn't exist
-            mll.vanilla_launcher.create_empty_vanilla_launcher_profiles_file(minecraft_directory=app_settings.return_mc_directory())
+        try:
+            if not os.path.exists(app_settings.return_mc_directory()):
+                os.makedirs(app_settings.return_mc_directory())
+            if mll.vanilla_launcher.do_vanilla_launcher_profiles_exists(app_settings.return_mc_directory()):
+                self.view.controls = []
+                for profile in mll.vanilla_launcher.load_vanilla_launcher_profiles(app_settings.return_mc_directory()):
+                    self.view.controls.append(LauncherProfileOption(launcher_profile=profile, on_play=lambda p: self.play_launcher_profile(launcher_profile=p),
+                                                                    on_edit=lambda p: self.edit_launcher_profile(edit_profile=p),
+                                                                    on_remove=lambda p, o: self.remove_launcher_profile(edit_profile=p, launcher_option=o)))
+                self.view.controls.append(self.new_launcher_profile_button)
+            else:
+                # Add the default profiles ["latest-release", "latest-snapshot"]
+                default_profiles: list[mll.types.VanillaLauncherProfile] = [
+                    {"name": "", "versionType": "latest-release"},
+                    {"name": "", "versionType": "latest-snapshot"}
+                ]
+                # Create launcher_profiles.json file if it doesn't exist
+                mll.vanilla_launcher.create_empty_vanilla_launcher_profiles_file(minecraft_directory=app_settings.return_mc_directory())
 
-            # Add default profiles
-            for profile in default_profiles:
-                mll.vanilla_launcher.add_vanilla_launcher_profile(app_settings.return_mc_directory(), profile)
-            refresh()
+                # Add default profiles
+                for profile in default_profiles:
+                    mll.vanilla_launcher.add_vanilla_launcher_profile(app_settings.return_mc_directory(), profile)
+                refresh()
+        except Exception as e:
+            self.page.error(message=f"Error: {e}")
